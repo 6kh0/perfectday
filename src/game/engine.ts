@@ -37,7 +37,15 @@ export type Snapshot = {
   places: string[];
 };
 
-export type Game = { destroy: () => void; restart: () => void; press: () => void; pause: (on: boolean) => void };
+export type Game = {
+  destroy: () => void;
+  restart: () => void;
+  press: () => void;
+  /** touch thumbstick: a vector inside the unit circle, plus whether it is pushed far enough to run */
+  stick: (x: number, y: number, run: boolean) => void;
+  trick: () => void;
+  pause: (on: boolean) => void;
+};
 
 export function formatClock(min: number) {
   const t = DAY_START + min;
@@ -157,6 +165,9 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   let prompt: { label: string; act: () => void } | null = null;
   let fade = 0;
   let paused = false;
+  let stickX = 0;
+  let stickY = 0;
+  let stickRun = false;
 
   const enter = (id: SceneId, spawn: [number, number]) => {
     scene = SCENES[id];
@@ -345,14 +356,17 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       if (held("d", "arrowright")) ix++;
       if (held("w", "arrowup")) iy--;
       if (held("s", "arrowdown")) iy++;
+      ix += stickX;
+      iy += stickY;
     }
     if (ix || iy) {
       const len = Math.hypot(ix, iy);
-      const speed = held("shift") ? RUN : WALK;
+      // a thumbstick reports part of a step; the keyboard is always pushed all the way over
+      const speed = (held("shift") || stickRun ? RUN : WALK) * Math.min(1, len);
       moveAxis((ix / len) * speed * dt, "x");
       moveAxis((iy / len) * speed * dt, "y");
       walk += dt * (speed / 8);
-      if (ix) {
+      if (ix && Math.abs(ix) >= Math.abs(iy)) {
         facing = "side";
         flip = ix < 0;
       } else facing = iy < 0 ? "up" : "down";
@@ -508,9 +522,21 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     },
     restart: reset,
     press,
+    stick: (x, y, run) => {
+      stickX = x;
+      stickY = y;
+      stickRun = run;
+    },
+    trick: () => {
+      if (!dialogue && !ended && flipT < 0) flipT = 0;
+    },
     pause: (on: boolean) => {
       paused = on;
-      if (on) keys.clear();
+      if (on) {
+        keys.clear();
+        stickX = stickY = 0;
+        stickRun = false;
+      }
     },
   };
 }

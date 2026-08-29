@@ -14,10 +14,14 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   background: var(--bg);
   color: var(--paper);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .game {
@@ -26,6 +30,15 @@ body {
   display: grid;
   place-items: center;
   background: var(--bg);
+  /* no pinch-zoom, no rubber-banding, no double-tap zoom while playing */
+  touch-action: none;
+}
+
+/* held upright, the thumbs own the bottom of the screen — give the world the top of it */
+@media (orientation: portrait) and (max-width: 620px) {
+  .game.touch {
+    align-items: start;
+  }
 }
 
 .game > canvas {
@@ -140,6 +153,7 @@ body {
   gap: 7px;
   padding: 6px 12px;
   line-height: 1;
+  white-space: nowrap;
   background: rgba(255, 246, 214, 0.94);
 }
 
@@ -363,4 +377,204 @@ kbd {
 
 .ending button:hover {
   background: #ffe294;
+}
+
+/* ---------- on-screen controls ---------- */
+
+.thumbs {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  pointer-events: none;
+  touch-action: none;
+}
+
+.thumbs > * {
+  pointer-events: auto;
+}
+
+.stick {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(255, 246, 214, 0.12);
+  border: 3px solid rgba(255, 246, 214, 0.5);
+  box-shadow: 0 3px 0 rgba(20, 14, 30, 0.35);
+  touch-action: none;
+}
+
+.stick.held {
+  background: rgba(255, 246, 214, 0.2);
+  border-color: rgba(255, 246, 214, 0.75);
+}
+
+.stick-knob {
+  position: absolute;
+  left: 28%;
+  top: 28%;
+  width: 44%;
+  height: 44%;
+  border-radius: 50%;
+  background: rgba(255, 246, 214, 0.9);
+  border: 2px solid var(--wood);
+  box-sizing: border-box;
+  box-shadow: 0 3px 0 rgba(20, 14, 30, 0.4);
+}
+
+.taps {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.tap {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(255, 246, 214, 0.92);
+  border: 2px solid var(--wood);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 rgba(20, 14, 30, 0.45);
+  touch-action: none;
+  cursor: pointer;
+}
+
+.tap.act {
+  width: 88px;
+  height: 88px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.tap.trick {
+  width: 60px;
+  height: 60px;
+  font-size: 11px;
+  background: rgba(255, 246, 214, 0.62);
+}
+
+.tap:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(20, 14, 30, 0.45);
+}
+
+/* the dialogue and the E-prompt live above the pad instead of under a thumb */
+.game.touch .dialogue {
+  bottom: calc(178px + env(safe-area-inset-bottom));
+  width: min(760px, calc(100vw - 28px));
+  padding: 13px 15px;
+}
+
+.game.touch .dialogue p {
+  font-size: 14px;
+}
+
+.game.touch .prompt {
+  bottom: calc(232px + env(safe-area-inset-bottom));
+  max-width: calc(100vw - 28px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* landscape on a handheld: short screen, but the middle of the bottom edge is free */
+@media (orientation: landscape) and (max-height: 480px) {
+  .stick {
+    width: 106px;
+    height: 106px;
+  }
+
+  .tap.act {
+    width: 74px;
+    height: 74px;
+    font-size: 13px;
+  }
+
+  .tap.trick {
+    width: 52px;
+    height: 52px;
+    font-size: 10px;
+  }
+
+  .game.touch .dialogue {
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: min(560px, calc(100vw - 320px));
+  }
+
+  .game.touch .prompt {
+    bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 620px) {
+  .hud {
+    top: calc(10px + env(safe-area-inset-top));
+    left: calc(10px + env(safe-area-inset-left));
+    right: calc(10px + env(safe-area-inset-right));
+    gap: 6px;
+  }
+
+  .pill,
+  .prompt {
+    font-size: 11px;
+  }
+
+  .pill {
+    padding: 5px 9px;
+    gap: 5px;
+  }
+
+  .hud .place {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .hud .clock {
+    letter-spacing: 0.04em;
+  }
+
+  .hud .stats em {
+    display: none;
+  }
+
+  .splash-prompt {
+    bottom: max(6vh, calc(16px + env(safe-area-inset-bottom)));
+    font-size: 11px;
+  }
+
+  .ending {
+    padding: 16px;
+    overflow: auto;
+  }
+
+  .ending-card {
+    gap: 5px;
+    padding: 20px 18px;
+  }
+
+  .ending h2 {
+    font-size: 20px;
+    letter-spacing: 0.1em;
+  }
+
+  .ending ul {
+    font-size: 12px;
+  }
+
+  .ending button {
+    padding: 11px 20px;
+  }
 }
