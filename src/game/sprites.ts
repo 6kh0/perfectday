@@ -71,19 +71,68 @@ export function charPalette(hair: string, shirt: string, pants: string, skin = "
   };
 }
 
-export const PLAYER_PALETTE = charPalette("#6b4a8f", "#ff8fa3", "#4a6fd4");
+/* ---------- the player is a cat: 12 wide x 11 tall ---------- */
+
+export const PLAYER_DOWN: Bitmap = [
+  "..o......o..",
+  ".oho....oho.",
+  ".offo..offo.",
+  ".offffffffo.",
+  "offffffffffo",
+  "offeffffeffo",
+  "offffnnffffo",
+  "offffffffffo",
+  ".offffffffo.",
+  ".offffffffo.",
+  ".oo.oo.oo.o.",
+];
+
+export const PLAYER_UP: Bitmap = [
+  "..o......o..",
+  ".oho....oho.",
+  ".offo..offo.",
+  ".offffffffo.",
+  "offffffffffo",
+  "offffffffffo",
+  "offffffffffo",
+  "offffffffffo",
+  ".offffffffo.",
+  ".offfoffffo.",
+  ".oo.oo.oo.o.",
+];
+
+export const PLAYER_SIDE: Bitmap = [
+  ".......oo...",
+  "......ohho..",
+  "f.....offo..",
+  "ff...offffo.",
+  ".fofffffffo.",
+  ".offfffefffo",
+  ".offfffffnfo",
+  ".offffffffo.",
+  ".offffffffo.",
+  ".oo.oo.oo.o.",
+];
+
+/** Palette keys: o outline, f fur, e eye, n nose, h inner ear */
+export function playerPalette(fur: string): Palette {
+  return { o: "#4a3524", f: fur, e: "#3b2a1c", n: "#ff9fb0", h: "#ff9fb0" };
+}
+
+export const PLAYER_PALETTE = playerPalette("#f0a860");
 
 /* ---------- cat: 8 wide x 8 tall ---------- */
 
 export const CAT: Bitmap = [
-  "oo....oo",
-  "ofo..ofo",
-  ".offffo.",
-  ".ofefeo.",
-  ".offnfo.",
-  ".offffo.",
-  "offffffo",
-  ".o.oo.o.",
+  "oo......oo",
+  "ofo....ofo",
+  ".offffffo.",
+  ".ofeffefo.",
+  ".offnnffo.",
+  ".offffffo.",
+  "offffffffo",
+  "offffffffo",
+  ".oo.oo.oo.",
 ];
 
 export function catPalette(fur: string): Palette {

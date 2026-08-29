@@ -5,6 +5,9 @@ export const T = 16; // tile size in game pixels
 /** chars the player cannot walk through */
 export const SOLID = new Set("TB~flnHmVKC#-tbvASEpX".split(""));
 
+/** floors, so a scene can say what its furniture stands on */
+export const FLOORS = new Set("wscjko.,=".split(""));
+
 const hash = (x: number, y: number) => {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -33,13 +36,18 @@ function grass(ctx: Ctx, x: number, y: number, r: number) {
 }
 
 function woodFloor(ctx: Ctx, x: number, y: number, tx: number, ty: number) {
+  // long horizontal planks: seams run across tiles, joins stagger, so the floor
+  // doesn't read as a grid of squares
   px(ctx, "#c9a06a", x, y, T, T);
-  px(ctx, "#bf9159", x, y + 7, T, 1);
-  px(ctx, "#bf9159", x, y + 15, T, 1);
-  const off = ty % 2 === 0 ? 0 : 8;
-  px(ctx, "#b0864f", x + ((off + 4) % 16), y, 1, 8);
-  px(ctx, "#b0864f", x + ((off + 12) % 16), y + 8, 1, 8);
-  if (hash(tx, ty) < 0.3) px(ctx, "#d3ac78", x + 2, y + 3, 6, 1);
+  for (let i = 0; i < 2; i++) {
+    const py = y + i * 8;
+    const plank = ty * 2 + i;
+    px(ctx, "#bb9058", x, py + 7, T, 1);
+    if ((tx + plank * 2) % 3 === 0) px(ctx, "#b0864f", x + 5, py, 1, 7);
+    const r = hash(tx * 3, plank);
+    if (r < 0.35) px(ctx, "#d3ac78", x + 2, py + 3, 9, 1);
+    else if (r > 0.85) px(ctx, "#bd9159", x + 8, py + 4, 5, 1);
+  }
 }
 
 /* ---------- painters ---------- */
@@ -72,11 +80,13 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
   },
   T: (c, x, y, r) => {
     grass(c, x, y, r);
-    px(c, "#8a5a3b", x + 6, y + 9, 4, 7);
-    px(c, "#6f462d", x + 6, y + 9, 1, 7);
+    const d = r < 0.34 ? -1 : r > 0.67 ? 1 : 0;
+    const leaf = r < 0.5 ? "#4f9e46" : "#58a94c";
+    px(c, "#8a5a3b", x + 6 + d, y + 9, 4, 7);
+    px(c, "#6f462d", x + 6 + d, y + 9, 1, 7);
     px(c, "#3d7c37", x + 2, y + 1, 12, 10);
-    px(c, "#4f9e46", x + 3, y + 1, 10, 8);
-    px(c, "#62b855", x + 4, y + 2, 6, 4);
+    px(c, leaf, x + 3, y + 1, 10, 8);
+    px(c, "#62b855", x + 4 + d, y + 2, 6, 4);
     px(c, "#3d7c37", x + 1, y + 4, 1, 4);
     px(c, "#3d7c37", x + 14, y + 4, 1, 4);
   },
@@ -156,6 +166,24 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     if (n(-1, 0) !== "c") px(c, "#d97fa5", x, y, 1, T);
     if (n(1, 0) !== "c") px(c, "#d97fa5", x + 15, y, 1, T);
   },
+  k: (c, x, y, r, n, tx, ty) => {
+    px(c, "#2b2450", x, y, T, T);
+    px(c, "#332b5e", x + ((tx + ty) % 2) * 8, y, 8, 8);
+    px(c, "#332b5e", x + (((tx + ty) % 2) ^ 1) * 8, y + 8, 8, 8);
+    const neon = ["#d94f63", "#6fb3d9", "#d9b04f", "#63ad5c", "#a37fd1"];
+    for (let i = 0; i < 2; i++) {
+      const sx = x + Math.floor(hash(tx * 9 + i, ty) * (T - 2));
+      const sy = y + Math.floor(hash(tx, ty * 7 + i) * (T - 2));
+      px(c, neon[Math.floor(hash(sx, sy) * neon.length)]!, sx, sy, 2, 1);
+    }
+  },
+  j: (c, x, y, r, n, tx, ty) => {
+    px(c, "#4a1c30", x, y, T, T);
+    px(c, "#55223a", x + 8, y, 8, 8);
+    px(c, "#55223a", x, y + 8, 8, 8);
+    px(c, "#5e2740", x + 3, y + 3, 2, 2);
+    px(c, "#5e2740", x + 11, y + 11, 2, 2);
+  },
   o: (c, x, y, r, n, tx, ty) => {
     px(c, "#ffd166", x, y, T, T);
     px(c, "#ffe09a", x + 2, y + 2, 12, 12);
@@ -167,14 +195,21 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     px(c, "#f0c592", x, y, T, 2);
     px(c, "#8a5a3b", x + 3, y + 7, 1, 9);
     px(c, "#8a5a3b", x + 12, y + 7, 1, 9);
+    if (n(-1, 0) !== "-") px(c, "#6f462d", x, y, 1, T);
+    if (n(1, 0) !== "-") px(c, "#6f462d", x + 15, y, 1, T);
+    if (n(0, -1) !== "-") px(c, "#f6d6ad", x, y, T, 1);
   },
   t: (c, x, y, r, n) => {
     px(c, "#d3ac78", x, y + 1, T, 13);
+    px(c, "#e8cea4", x, y + 2, T, 2);
     px(c, "#8a5a3b", x, y + 13, T, 3);
-    px(c, "#e8ceA4".toLowerCase(), x + 1, y + 2, T - 2, 2);
-    if (n(0, -1) !== "t" && n(-1, 0) !== "t" && r < 0.7) {
-      px(c, "#f4f1ff", x + 5, y + 5, 6, 5);
-      px(c, "#cfd6e6", x + 5, y + 9, 6, 1);
+    if (n(-1, 0) !== "t") px(c, "#8a5a3b", x, y + 1, 1, 15);
+    if (n(1, 0) !== "t") px(c, "#8a5a3b", x + 15, y + 1, 1, 15);
+    if (n(0, -1) !== "t") px(c, "#8a5a3b", x, y + 1, T, 1);
+    if (n(-1, 0) !== "t" && r < 0.75) {
+      px(c, "#f4f1ff", x + 6, y + 5, 7, 5);
+      px(c, "#cfd6e6", x + 6, y + 9, 7, 1);
+      px(c, "#ff9fb0", x + 8, y + 6, 3, 2);
     }
   },
   b: (c, x, y, r, n) => {
@@ -209,9 +244,13 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     if (n(1, 0) !== "S") px(c, "#2a2438", x + 14, y, 2, T);
   },
   E: (c, x, y, r, n) => {
-    px(c, "#8a2f45", x + 1, y + 4, 14, 12);
-    px(c, "#a13b52", x + 2, y + 5, 12, 8);
-    px(c, "#c04b64", x + 3, y + 6, 10, 3);
+    px(c, "#8a2f45", x, y + 3, T, 13);
+    px(c, "#a13b52", x + 1, y + 5, 14, 9);
+    px(c, "#c04b64", x + 2, y + 6, 12, 3);
+    px(c, "#6d2338", x, y + 3, 1, 13);
+    px(c, "#6d2338", x + 15, y + 3, 1, 13);
+    if (n(-1, 0) !== "E") px(c, "#6d2338", x, y + 3, 2, 13);
+    if (n(1, 0) !== "E") px(c, "#6d2338", x + 14, y + 3, 2, 13);
   },
   p: (c, x, y, r) => {
     px(c, "#c07a4a", x + 4, y + 9, 8, 7);
@@ -227,11 +266,13 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     px(c, "#a8763f", x + 3, y + 5, 10, 9);
     px(c, "#ffd166", x + 11, y + 9, 2, 2);
   },
-  V: (c, x, y) => {
-    px(c, "#5b5470", x + 6, y + 12, 4, 3);
-    px(c, "#3b3350", x + 1, y + 2, 14, 11);
-    px(c, "#8fd3ff", x + 3, y + 4, 10, 7);
-    px(c, "#f4f1ff", x + 4, y + 5, 3, 2);
+  V: (c, x, y, r, n) => {
+    const left = n(-1, 0) !== "V";
+    const right = n(1, 0) !== "V";
+    px(c, "#5b5470", x, y + 13, T, 3);
+    px(c, "#3b3350", x + (left ? 2 : 0), y + 1, T - (left ? 2 : 0) - (right ? 2 : 0), 12);
+    px(c, "#8fd3ff", x + (left ? 4 : 0), y + 3, T - (left ? 4 : 0) - (right ? 4 : 0), 8);
+    if (left) px(c, "#f4f1ff", x + 5, y + 4, 3, 3);
   },
   K: (c, x, y, r, n) => {
     px(c, "#a86f3c", x, y, T, T);
@@ -248,23 +289,36 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     px(c, "#8a5a3b", x + 12, y + 8, 1, 8);
   },
   C: (c, x, y, r, n) => {
-    px(c, "#c08a52", x + 6, y, 4, T);
-    px(c, "#f0a3c2", x + 1, y + 1, 14, 5);
-    px(c, "#f7b9d2", x + 2, y + 2, 12, 2);
-    px(c, "#f0a3c2", x + 2, y + 11, 12, 5);
-    px(c, "#d97fa5", x + 2, y + 15, 12, 1);
+    // carpeted base, a rope-wrapped post, a round cushion on top
+    px(c, "#d97fa5", x + 2, y + 12, 12, 4);
+    px(c, "#f0a3c2", x + 2, y + 12, 12, 2);
+    px(c, "#c08a52", x + 6, y + 5, 4, 8);
+    px(c, "#a8763f", x + 6, y + 6, 4, 1);
+    px(c, "#a8763f", x + 6, y + 9, 4, 1);
+    px(c, "#d97fa5", x + 1, y + 1, 14, 5);
+    px(c, "#f0a3c2", x + 2, y + 1, 12, 4);
+    px(c, "#f7b9d2", x + 3, y + 2, 5, 2);
   },
   m: (c, x, y, r, n) => {
     const head = n(0, -1) !== "m";
-    px(c, "#c08a52", x, y, T, T);
-    px(c, "#f4f1ff", x + 1, y, 14, T);
+    const foot = n(0, 1) !== "m";
+    const left = n(-1, 0) !== "m";
+    const right = n(1, 0) !== "m";
+    const ix = left ? x + 2 : x;
+    const iw = T - (left ? 2 : 0) - (right ? 2 : 0);
+    px(c, "#8a5a3b", x, y, T, T); // frame
     if (head) {
-      px(c, "#ffe9a8", x + 2, y + 2, 12, 6);
-      px(c, "#fff6d6", x + 3, y + 3, 10, 3);
+      px(c, "#c08a52", x, y, T, 4); // headboard
+      px(c, "#d3ac78", x, y, T, 1);
+      px(c, "#f4f1ff", ix, y + 4, iw, T - 4);
+      px(c, "#fff6d6", ix + 1, y + 6, iw - 2, 7); // pillow
+      px(c, "#e6dcc4", ix + 1, y + 13, iw - 2, 1);
     } else {
-      px(c, "#8fd3ff", x + 1, y, 14, T);
-      px(c, "#a7e0ff", x + 1, y + 2, 14, 2);
-      px(c, "#6fbde8", x + 1, y + 12, 14, 2);
+      px(c, "#f4a58c", ix, y, iw, T - (foot ? 2 : 0)); // quilt
+      if (n(0, -2) !== "m") px(c, "#ffd6c2", ix, y, iw, 4); // turned-down edge
+      px(c, "#e8907a", ix + 3, y + 7, 2, 2);
+      px(c, "#e8907a", ix + 10, y + 11, 2, 2);
+      if (foot) px(c, "#d97e68", ix, y + T - 5, iw, 3);
     }
   },
 };

@@ -244,6 +244,8 @@ export type Scene = {
   id: SceneId;
   name: string;
   outdoor: boolean;
+  floor: string;
+  dim?: string;
   tiles: string[];
   buildings: Building[];
   things: Thing[];
@@ -276,17 +278,18 @@ rect(townGrid, 2, 10, 4, 3, "~");
 put(townGrid, [[9, 10], [10, 12], [22, 12], [24, 11], [6, 20], [21, 20], [2, 15], [11, 15]], "T");
 put(townGrid, [[8, 11], [23, 13], [3, 20], [26, 20], [11, 11]], "B");
 put(townGrid, [[2, 9], [27, 9], [2, 17], [27, 17]], "l");
-put(townGrid, [[16, 10], [17, 10], [7, 16], [8, 16]], "n");
+put(townGrid, [[16, 10], [17, 10], [11, 16], [12, 16]], "n");
 put(
   townGrid,
-  [[2, 1], [7, 1], [12, 1], [19, 1], [24, 1], [6, 9], [19, 9], [4, 12], [25, 15], [17, 20], [9, 20], [15, 11], [18, 16]],
+  [[2, 1], [7, 1], [12, 1], [19, 1], [24, 1], [6, 9], [19, 9], [6, 12], [25, 15], [17, 20], [9, 20], [15, 11], [24, 16]],
   ",",
 );
 
 export const TOWN: Scene = {
   id: "town",
-  name: "Maple Street",
+  name: "Sunbeam Street",
   outdoor: true,
+  floor: ".",
   tiles: rows(townGrid),
   buildings: [
     { x: 3, y: 2, w: 6, h: 5, roof: "#f08a76", roofDark: "#d16a58", wall: "#fff1d6", doorX: 5, icon: "home", name: "Your place" },
@@ -297,7 +300,7 @@ export const TOWN: Scene = {
   ],
   things: [
     { id: "notice", tx: 15, ty: 8, label: "Read the notice board", lines: [
-      "TODAY ON MAPLE STREET",
+      "TODAY ON SUNBEAM STREET",
       "• Diner: lunch special, friends already inside",
       "• Arcade: the racing cabinet is fixed (allegedly)",
       "• Cat cafe: nine cats, all of them opinionated",
@@ -330,159 +333,188 @@ export const TOWN: Scene = {
 
 /* ---------- HOME ---------- */
 
-const homeGrid = room(20, 12, "w", 9);
-rect(homeGrid, 2, 2, 3, 2, "m"); // bed
-rect(homeGrid, 15, 2, 4, 1, "K"); // kitchen
-rect(homeGrid, 8, 7, 4, 1, "v"); // sofa
-rect(homeGrid, 8, 8, 4, 2, "c"); // rug
-rect(homeGrid, 9, 3, 2, 1, "V"); // tv
-put(homeGrid, [[1, 10], [18, 10]], "p");
-put(homeGrid, [[15, 7], [16, 7]], "t");
+const homeGrid = room(24, 14, "w", 11);
+rect(homeGrid, 2, 2, 2, 3, "m"); // bed: pillow end against the wall
+rect(homeGrid, 18, 2, 4, 1, "K"); // kitchen
+rect(homeGrid, 10, 7, 4, 1, "v"); // sofa
+rect(homeGrid, 10, 8, 4, 2, "c"); // rug
+rect(homeGrid, 11, 3, 2, 1, "V"); // tv
+rect(homeGrid, 18, 7, 2, 1, "t");
+put(homeGrid, [[1, 12], [22, 12], [6, 7]], "p");
+put(homeGrid, [[2, 6], [3, 6]], "t");
 
 export const HOME: Scene = {
   id: "home",
   name: "Your place",
   outdoor: false,
+  floor: "w",
   tiles: rows(homeGrid),
   buildings: [],
   things: [
-    { id: "sofa", tx: 9, ty: 7, label: ACTIVITIES.chill!.title, activity: "chill" },
-    { id: "kitchen", tx: 16, ty: 2, label: ACTIVITIES.snack!.title, activity: "snack" },
-    { id: "bed", tx: 3, ty: 3, label: "Go to bed (ends the day)", activity: "sleep" },
+    { id: "sofa", tx: 11, ty: 7, label: ACTIVITIES.chill!.title, activity: "chill" },
+    { id: "kitchen", tx: 19, ty: 2, label: ACTIVITIES.snack!.title, activity: "snack" },
+    { id: "bed", tx: 2, ty: 4, label: "Go to bed (ends the day)", activity: "sleep" },
+    { id: "window", tx: 8, ty: 2, label: "Look out of the window", lines: [
+      "The street is already warm. Somebody's radio is on somewhere.",
+      "A whole day, and nobody expecting you anywhere.",
+    ] },
   ],
   people: [],
-  portals: [{ tx: 9, ty: 11, to: "town", spawn: [5, 8], label: "Maple Street" }],
-  coins: [[17, 9]],
-  spawn: [9, 10],
+  portals: [
+    { tx: 11, ty: 13, to: "town", spawn: [5, 8], label: "Sunbeam Street" },
+    { tx: 12, ty: 13, to: "town", spawn: [5, 8], label: "Sunbeam Street" },
+  ],
+  coins: [[20, 11]],
+  spawn: [11, 12],
 };
-
 /* ---------- DINER ---------- */
 
-const dinerGrid = room(20, 12, "s", 9);
-rect(dinerGrid, 2, 2, 7, 1, "-"); // counter
-rect(dinerGrid, 12, 3, 2, 1, "t"); // friends' table
-put(dinerGrid, [[11, 3], [14, 3]], "b");
-rect(dinerGrid, 12, 7, 2, 1, "t");
-put(dinerGrid, [[11, 7], [14, 7]], "b");
-rect(dinerGrid, 3, 7, 2, 1, "t");
-put(dinerGrid, [[2, 7], [5, 7]], "b");
-put(dinerGrid, [[18, 2], [1, 10]], "p");
+const dinerGrid = room(24, 14, "s", 11);
+rect(dinerGrid, 2, 3, 8, 1, "-"); // counter, the cook stands behind it
+rect(dinerGrid, 14, 3, 2, 1, "t"); // the friends' booth
+put(dinerGrid, [[13, 3], [16, 3]], "b");
+rect(dinerGrid, 14, 8, 2, 1, "t");
+put(dinerGrid, [[13, 8], [16, 8]], "b");
+rect(dinerGrid, 3, 8, 2, 1, "t");
+put(dinerGrid, [[2, 8], [5, 8]], "b");
+rect(dinerGrid, 19, 8, 2, 1, "t");
+put(dinerGrid, [[18, 8], [21, 8]], "b");
+rect(dinerGrid, 19, 3, 2, 1, "t");
+put(dinerGrid, [[18, 3], [21, 3]], "b");
+put(dinerGrid, [[11, 2], [1, 12], [22, 12]], "p");
 
 export const DINER: Scene = {
   id: "diner",
   name: "The Bluebird Diner",
   outdoor: false,
+  floor: "s",
   tiles: rows(dinerGrid),
   buildings: [],
   things: [
-    { id: "table", tx: 12, ty: 4, label: ACTIVITIES.lunch!.title, activity: "lunch" },
-    { id: "counter", tx: 5, ty: 3, label: "Chat with the cook", lines: [
+    { id: "table", tx: 14, ty: 4, label: ACTIVITIES.lunch!.title, activity: "lunch" },
+    { id: "counter", tx: 5, ty: 4, label: "Chat with the cook", lines: [
       "COOK: Your table's the loud one. As usual.",
       "COOK: Fries are on the house if you actually sit down and stay a while.",
     ] },
   ],
   people: [
-    { id: "maya", tx: 11, ty: 3, kind: "person", palette: charPalette("#3b2a1c", "#ffd166", "#4a6fd4"), facing: "side", label: "Maya", lines: ["MAYA: Sit! Sit sit sit. We've been holding this booth for an hour."] },
-    { id: "theo", tx: 14, ty: 3, kind: "person", palette: charPalette("#a8663b", "#7bd06b", "#3b3350"), facing: "side", flip: true, label: "Theo", lines: ["THEO: I have a story. It's long and it's about a bird. You'll love it."] },
+    { id: "maya", tx: 13, ty: 3, kind: "person", palette: charPalette("#3b2a1c", "#ffd166", "#4a6fd4"), facing: "side", label: "Maya", lines: ["MAYA: Sit! Sit sit sit. We've been holding this booth for an hour."] },
+    { id: "theo", tx: 16, ty: 3, kind: "person", palette: charPalette("#a8663b", "#7bd06b", "#3b3350"), facing: "side", flip: true, label: "Theo", lines: ["THEO: I have a story. It's long and it's about a bird. You'll love it."] },
     { id: "cook", tx: 5, ty: 2, kind: "person", palette: charPalette("#cfc6d8", "#f4f1ff", "#8a6c4c"), facing: "down" },
   ],
-  portals: [{ tx: 9, ty: 11, to: "town", spawn: [14, 8], label: "Maple Street" }],
-  coins: [[18, 9]],
-  spawn: [9, 10],
+  portals: [
+    { tx: 11, ty: 13, to: "town", spawn: [14, 8], label: "Sunbeam Street" },
+    { tx: 12, ty: 13, to: "town", spawn: [14, 8], label: "Sunbeam Street" },
+  ],
+  coins: [[21, 11]],
+  spawn: [11, 12],
 };
-
 /* ---------- ARCADE ---------- */
 
-const arcadeGrid = room(20, 12, "c", 9);
-rect(arcadeGrid, 2, 2, 7, 1, "A");
-rect(arcadeGrid, 11, 2, 7, 1, "A");
-rect(arcadeGrid, 5, 6, 9, 1, "A");
-rect(arcadeGrid, 2, 9, 3, 1, "-");
-put(arcadeGrid, [[18, 9], [1, 6]], "p");
+const arcadeGrid = room(24, 14, "k", 11);
+rect(arcadeGrid, 2, 2, 8, 1, "A");
+rect(arcadeGrid, 14, 2, 8, 1, "A");
+rect(arcadeGrid, 6, 6, 12, 1, "A");
+rect(arcadeGrid, 2, 11, 3, 1, "-");
+put(arcadeGrid, [[22, 11], [1, 6], [12, 2]], "p");
 
 export const ARCADE: Scene = {
   id: "arcade",
   name: "Quarterhouse Arcade",
   outdoor: false,
+  floor: "k",
   tiles: rows(arcadeGrid),
   buildings: [],
   things: [
-    { id: "cabinets", tx: 9, ty: 6, label: ACTIVITIES.arcade!.title, activity: "arcade" },
-    { id: "claw", tx: 17, ty: 2, label: ACTIVITIES.claw!.title, activity: "claw" },
-    { id: "prizes", tx: 3, ty: 9, label: "Look at the prize wall", lines: [
+    { id: "cabinets", tx: 11, ty: 6, label: ACTIVITIES.arcade!.title, activity: "arcade" },
+    { id: "claw", tx: 21, ty: 2, label: ACTIVITIES.claw!.title, activity: "claw" },
+    { id: "prizes", tx: 3, ty: 11, label: "Look at the prize wall", lines: [
       "A wall of plush frogs, sticker sheets and one enormous inflatable banana.",
       "ATTENDANT: The banana is nine thousand tickets. Nobody has ever gotten the banana.",
     ] },
   ],
   people: [
-    { id: "attendant", tx: 3, ty: 10, kind: "person", palette: charPalette("#e2705f", "#8f7de8", "#3b3350"), facing: "up" },
+    { id: "attendant", tx: 3, ty: 12, kind: "person", palette: charPalette("#e2705f", "#8f7de8", "#3b3350"), facing: "up" },
     { id: "player2", tx: 15, ty: 7, kind: "person", palette: charPalette("#3b2a1c", "#ff5d73", "#4a6fd4"), facing: "up", label: "Say hello", lines: ["KID: I'm on level nine. Do not talk to me. Respectfully."] },
   ],
-  portals: [{ tx: 9, ty: 11, to: "town", spawn: [23, 8], label: "Maple Street" }],
-  coins: [[18, 4], [2, 7]],
-  spawn: [9, 10],
+  portals: [
+    { tx: 11, ty: 13, to: "town", spawn: [23, 8], label: "Sunbeam Street" },
+    { tx: 12, ty: 13, to: "town", spawn: [23, 8], label: "Sunbeam Street" },
+  ],
+  coins: [[21, 4], [2, 8]],
+  spawn: [11, 12],
 };
-
 /* ---------- CAT CAFE ---------- */
 
-const catGrid = room(20, 12, "w", 9);
-rect(catGrid, 2, 2, 5, 1, "-");
-put(catGrid, [[16, 2], [16, 6]], "C");
-rect(catGrid, 9, 4, 2, 1, "t");
-rect(catGrid, 4, 8, 2, 1, "t");
-put(catGrid, [[12, 8], [1, 10], [18, 10]], "p");
+const catGrid = room(24, 14, "w", 11);
+rect(catGrid, 2, 3, 6, 1, "-");
+put(catGrid, [[19, 2], [19, 7], [2, 9], [14, 2]], "C");
+rect(catGrid, 10, 4, 2, 1, "t");
+rect(catGrid, 5, 9, 2, 1, "t");
+rect(catGrid, 16, 10, 2, 1, "t");
+rect(catGrid, 9, 7, 3, 2, "c");
+rect(catGrid, 17, 4, 3, 2, "c");
+put(catGrid, [[1, 12], [22, 12], [13, 9]], "p");
 
 export const CATCAFE: Scene = {
   id: "catcafe",
   name: "Two Whiskers Cat Cafe",
   outdoor: false,
+  floor: "w",
   tiles: rows(catGrid),
   buildings: [],
   things: [
-    { id: "counter", tx: 4, ty: 3, label: ACTIVITIES.catcafe!.title, activity: "catcafe" },
+    { id: "counter", tx: 4, ty: 4, label: ACTIVITIES.catcafe!.title, activity: "catcafe" },
   ],
   people: [
     { id: "barista", tx: 4, ty: 2, kind: "person", palette: charPalette("#6b4a8f", "#ff9fb0", "#3b3350"), facing: "down" },
-    { id: "cat1", tx: 15, ty: 4, kind: "cat", palette: catPalette("#f0a860"), facing: "down", label: ACTIVITIES.pet!.title },
-    { id: "cat2", tx: 10, ty: 6, kind: "cat", palette: catPalette("#4a4453"), facing: "down", label: ACTIVITIES.pet!.title },
-    { id: "cat3", tx: 6, ty: 9, kind: "cat", palette: catPalette("#f4f1ff"), facing: "down", label: ACTIVITIES.pet!.title },
-    { id: "cat4", tx: 17, ty: 7, kind: "cat", palette: catPalette("#c98b5a"), facing: "down", label: ACTIVITIES.pet!.title },
+    { id: "cat1", tx: 18, ty: 4, kind: "cat", palette: catPalette("#a9b4c9"), facing: "down", label: ACTIVITIES.pet!.title },
+    { id: "cat2", tx: 10, ty: 7, kind: "cat", palette: catPalette("#4a4453"), facing: "down", label: ACTIVITIES.pet!.title },
+    { id: "cat3", tx: 6, ty: 11, kind: "cat", palette: catPalette("#f4f1ff"), facing: "down", label: ACTIVITIES.pet!.title },
+    { id: "cat4", tx: 20, ty: 9, kind: "cat", palette: catPalette("#c98b5a"), facing: "down", label: ACTIVITIES.pet!.title },
   ],
-  portals: [{ tx: 9, ty: 11, to: "town", spawn: [6, 19], label: "Maple Street" }],
-  coins: [[18, 4]],
-  spawn: [9, 10],
+  portals: [
+    { tx: 11, ty: 13, to: "town", spawn: [6, 19], label: "Sunbeam Street" },
+    { tx: 12, ty: 13, to: "town", spawn: [6, 19], label: "Sunbeam Street" },
+  ],
+  coins: [[21, 4]],
+  spawn: [11, 12],
 };
-
 /* ---------- CINEMA ---------- */
 
-const cineGrid = room(20, 12, "c", 9);
-rect(cineGrid, 3, 2, 14, 1, "S");
-rect(cineGrid, 4, 5, 12, 1, "E");
-rect(cineGrid, 4, 7, 12, 1, "E");
-rect(cineGrid, 2, 10, 3, 1, "-");
-put(cineGrid, [[18, 10], [1, 4]], "p");
+const cineGrid = room(24, 14, "j", 11);
+rect(cineGrid, 4, 2, 16, 1, "S");
+rect(cineGrid, 5, 5, 14, 1, "E");
+rect(cineGrid, 5, 7, 14, 1, "E");
+rect(cineGrid, 5, 9, 14, 1, "E");
+rect(cineGrid, 2, 11, 3, 1, "-");
+put(cineGrid, [[21, 11], [1, 4], [22, 2]], "p");
 
 export const CINEMA: Scene = {
   id: "cinema",
   name: "The Roxy",
   outdoor: false,
+  floor: "j",
+  dim: "rgba(28, 20, 56, 0.22)",
   tiles: rows(cineGrid),
   buildings: [],
   things: [
-    { id: "tickets", tx: 3, ty: 10, label: ACTIVITIES.movie!.title, activity: "movie" },
-    { id: "poster", tx: 17, ty: 4, label: "Read the poster", lines: [
+    { id: "tickets", tx: 3, ty: 11, label: ACTIVITIES.movie!.title, activity: "movie" },
+    { id: "poster", tx: 21, ty: 5, label: "Read the poster", lines: [
       "THE LONG WAY HOME — one showing daily",
       "\"Four stars. I cried at a bus stop.\" — someone in the queue",
     ] },
   ],
   people: [
-    { id: "usher", tx: 4, ty: 9, kind: "person", palette: charPalette("#3b2a1c", "#e2705f", "#3b3350"), facing: "down", label: "Usher", lines: ["USHER: Screen two, and no, I won't tell you the ending."] },
+    { id: "usher", tx: 5, ty: 11, kind: "person", palette: charPalette("#3b2a1c", "#e2705f", "#3b3350"), facing: "down", label: "Usher", lines: ["USHER: Screen two, and no, I won't tell you the ending."] },
   ],
-  portals: [{ tx: 9, ty: 11, to: "town", spawn: [16, 19], label: "Maple Street" }],
-  coins: [[17, 9]],
-  spawn: [9, 10],
+  portals: [
+    { tx: 11, ty: 13, to: "town", spawn: [16, 19], label: "Sunbeam Street" },
+    { tx: 12, ty: 13, to: "town", spawn: [16, 19], label: "Sunbeam Street" },
+  ],
+  coins: [[20, 10]],
+  spawn: [11, 12],
 };
-
 /* ---------- PARK ---------- */
 
 const parkGrid = grid(24, 16, ".");
@@ -506,6 +538,7 @@ export const PARK: Scene = {
   id: "park",
   name: "Fernway Park",
   outdoor: true,
+  floor: ".",
   tiles: rows(parkGrid),
   buildings: [],
   things: [
@@ -518,7 +551,7 @@ export const PARK: Scene = {
     { id: "duck2", tx: 5, ty: 6, kind: "duck", palette: {}, facing: "down", flip: true },
     { id: "jogger", tx: 12, ty: 11, kind: "person", palette: charPalette("#3b2a1c", "#7bd06b", "#4a6fd4"), facing: "up", label: "Say hello", lines: ["JOGGER: Third loop! ...Okay, second. Okay, first."] },
   ],
-  portals: [{ tx: 0, ty: 8, to: "town", spawn: [27, 10], label: "Maple Street" }],
+  portals: [{ tx: 0, ty: 8, to: "town", spawn: [27, 10], label: "Sunbeam Street" }],
   coins: [[20, 2], [4, 13], [21, 13]],
   spawn: [1, 8],
 };
