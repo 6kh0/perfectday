@@ -1,5 +1,5 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -7,8 +7,8 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 50% 0%, #23213a 0%, #0d0c16 70%);
-  color: #cfcbe8;
+  background: linear-gradient(180deg, #8fd3ff 0%, #cdefff 45%, #fff6d6 100%);
+  color: #4a3524;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   user-select: none;
 }
@@ -33,20 +33,21 @@ body {
 }
 
 .game-hud .title {
-  color: #ffd166;
+  color: #ff7ab8;
   letter-spacing: 0.35em;
+  text-shadow: 0 1px 0 #fff;
 }
 
 .game-hud .stat b {
-  color: #4cc9f0;
+  color: #f2a007;
   font-size: 16px;
 }
 
 .screen {
   position: relative;
-  border: 3px solid #39365e;
-  border-radius: 4px;
-  box-shadow: 0 0 0 1px #0d0c16, 0 18px 50px rgba(0, 0, 0, 0.6);
+  border: 3px solid #fff;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px #ffd93d, 0 14px 30px rgba(74, 53, 36, 0.22);
   overflow: hidden;
 }
 
@@ -64,7 +65,7 @@ body {
   place-content: center;
   justify-items: center;
   gap: 6px;
-  background: rgba(13, 12, 22, 0.82);
+  background: rgba(255, 246, 214, 0.88);
   text-align: center;
 }
 
@@ -72,33 +73,34 @@ body {
   margin: 0;
   font-size: 28px;
   letter-spacing: 0.12em;
-  color: #ffd166;
+  color: #ff7ab8;
 }
 
 .overlay .sub {
   margin: 0 0 10px;
   font-size: 13px;
-  color: #8b86ad;
+  color: #8a7a63;
 }
 
 .overlay button {
   font: inherit;
   font-size: 13px;
   padding: 8px 16px;
-  color: #0d0c16;
-  background: #4cc9f0;
+  color: #4a3524;
+  background: #ffd93d;
   border: none;
-  border-radius: 3px;
+  border-radius: 999px;
+  box-shadow: 0 2px 0 #e8a52c;
   cursor: pointer;
 }
 
 .overlay button:hover {
-  background: #7ad9f6;
+  background: #ffe873;
 }
 
 .game-help {
   font-size: 12px;
-  color: #6f6a90;
+  color: #7d6b55;
   letter-spacing: 0.05em;
 }
 
@@ -110,9 +112,9 @@ kbd {
   font: inherit;
   font-size: 11px;
   text-align: center;
-  color: #cfcbe8;
-  background: #23213a;
-  border: 1px solid #39365e;
+  color: #4a3524;
+  background: #fff;
+  border: 1px solid #e3d3b4;
   border-bottom-width: 2px;
   border-radius: 3px;
 }

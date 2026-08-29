@@ -1,58 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 import "./game.css";
 
-/* ---------- world ---------- */
+/* ---------- world: one flat, open field ---------- */
 
-const T = 8; // tile size in game pixels
-const MAP: string[] = [
-  "####################",
-  "#@...*........*....#",
-  "#.###.####.###.###.#",
-  "#.#......*.......#.#",
-  "#.#.####.##.####.#.#",
-  "#...#..........#...#",
-  "###.#.########.#.###",
-  "#...*.#*....*#.....#",
-  "#.#####.####.#####.#",
-  "#.....#......#.....#",
-  "###.#.#.####.#.#.###",
-  "#*..#........*..#..#",
-  "#.#.######.#####.#.#",
-  "#.#......#.....#.#.#",
-  "#.####.#.#.###.#.#.#",
-  "#......#...#...*.#.#",
-  "#.####.#####.###...#",
-  "####################",
-];
-const MAP_W = MAP[0]!.length;
-const MAP_H = MAP.length;
-const W = MAP_W * T; // 160
-const H = MAP_H * T; // 144
+const W = 176; // game pixels
+const H = 144;
+const EDGE = 6; // grass margin the player can't walk past
 
 const PW = 6; // player hitbox
 const PH = 6;
-const SPEED = 46; // game pixels / second
-const CORNER = 3; // corner-correction slack in pixels
+const SPEED = 52; // game pixels / second
+const COIN_COUNT = 10;
 
-/* ---------- palette ---------- */
+/* ---------- happy palette ---------- */
 
 const C = {
-  floor: "#191828",
-  floorAlt: "#1e1d30",
-  wall: "#39365e",
-  wallTop: "#524e86",
-  wallShade: "#26243f",
-  coin: "#ffd166",
-  coinHi: "#fff3c4",
-  coinShadow: "#c98b2a",
-  outline: "#0d0c16",
+  grass: "#8ede6b",
+  grassAlt: "#84d763",
+  tuft: "#6bc551",
+  edge: "#68c14f",
+  flower: ["#ff7ab8", "#fff27a", "#8fd3ff", "#ffffff"],
+  flowerCore: "#ffd93d",
+  coin: "#ffd93d",
+  coinHi: "#fff8c9",
+  coinShadow: "#e8a52c",
+  outline: "#4a3524",
   skin: "#ffd6a5",
-  shirt: "#4cc9f0",
-  shirtDark: "#2a9dc4",
-  eye: "#0d0c16",
+  shirt: "#ff6b6b",
+  eye: "#4a3524",
+  shadow: "rgba(74, 53, 36, 0.22)",
 };
 
-/* ---------- 8x8 sprites: . = clear, o = outline, s = skin, b = shirt, d = shirt shadow, e = eye ---------- */
+/* ---------- 8x8 sprites: . clear, o outline, s skin, b shirt, e eye ---------- */
 
 const SPR_DOWN = [
   "..oooo..",
@@ -89,48 +68,8 @@ const SPRITE_COLORS: Record<string, string> = {
   o: C.outline,
   s: C.skin,
   b: C.shirt,
-  d: C.shirtDark,
   e: C.eye,
 };
-
-/* ---------- helpers ---------- */
-
-const solidAt = (tx: number, ty: number) =>
-  tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H || MAP[ty]![tx] === "#";
-
-/** true if a PW x PH box with top-left (x, y) overlaps no wall */
-function free(x: number, y: number) {
-  const x0 = Math.floor(x);
-  const y0 = Math.floor(y);
-  const x1 = Math.ceil(x + PW) - 1;
-  const y1 = Math.ceil(y + PH) - 1;
-  for (let ty = Math.floor(y0 / T); ty <= Math.floor(y1 / T); ty++) {
-    for (let tx = Math.floor(x0 / T); tx <= Math.floor(x1 / T); tx++) {
-      if (solidAt(tx, ty)) return false;
-    }
-  }
-  return true;
-}
-
-type Coin = { x: number; y: number; taken: boolean };
-
-function spawnPoint() {
-  for (let ty = 0; ty < MAP_H; ty++) {
-    const tx = MAP[ty]!.indexOf("@");
-    if (tx >= 0) return { x: tx * T + (T - PW) / 2, y: ty * T + (T - PH) / 2 };
-  }
-  return { x: T, y: T };
-}
-
-function makeCoins(): Coin[] {
-  const out: Coin[] = [];
-  for (let ty = 0; ty < MAP_H; ty++) {
-    for (let tx = 0; tx < MAP_W; tx++) {
-      if (MAP[ty]![tx] === "*") out.push({ x: tx * T + T / 2, y: ty * T + T / 2, taken: false });
-    }
-  }
-  return out;
-}
 
 function drawSprite(
   ctx: CanvasRenderingContext2D,
@@ -150,12 +89,57 @@ function drawSprite(
   }
 }
 
+/* ---------- decoration: fixed layout, purely cosmetic ---------- */
+
+type Decor = { x: number; y: number; kind: "tuft" | "flower"; color: string };
+
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const DECOR: Decor[] = (() => {
+  const rand = mulberry32(20260829);
+  const out: Decor[] = [];
+  for (let i = 0; i < 64; i++) {
+    const flower = rand() < 0.45;
+    out.push({
+      x: Math.floor(rand() * (W - 8)) + 4,
+      y: Math.floor(rand() * (H - 8)) + 4,
+      kind: flower ? "flower" : "tuft",
+      color: C.flower[Math.floor(rand() * C.flower.length)]!,
+    });
+  }
+  return out;
+})();
+
+/* ---------- coins ---------- */
+
+type Coin = { x: number; y: number; taken: boolean };
+
+function makeCoins(): Coin[] {
+  const out: Coin[] = [];
+  while (out.length < COIN_COUNT) {
+    const x = EDGE + 6 + Math.random() * (W - 2 * EDGE - 12);
+    const y = EDGE + 6 + Math.random() * (H - 2 * EDGE - 12);
+    const nearCenter = Math.hypot(x - W / 2, y - H / 2) < 22;
+    const crowded = out.some(c => Math.hypot(c.x - x, c.y - y) < 20);
+    if (!nearCenter && !crowded) out.push({ x, y, taken: false });
+  }
+  return out;
+}
+
 /* ---------- component ---------- */
 
 export function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState(4);
-  const [hud, setHud] = useState({ score: 0, total: 0, time: 0, won: false });
+  const [hud, setHud] = useState({ score: 0, total: COIN_COUNT, time: 0, won: false });
   const restartRef = useRef<() => void>(() => {});
 
   // integer-scale the canvas to the window
@@ -178,7 +162,8 @@ export function Game() {
     ctx.imageSmoothingEnabled = false;
 
     const keys = new Set<string>();
-    let player = spawnPoint();
+    const spawn = () => ({ x: (W - PW) / 2, y: (H - PH) / 2 });
+    let player = spawn();
     let coins = makeCoins();
     let facing: "down" | "up" | "side" = "down";
     let flip = false;
@@ -187,17 +172,16 @@ export function Game() {
     let won = false;
 
     const reset = () => {
-      player = spawnPoint();
+      player = spawn();
       coins = makeCoins();
       facing = "down";
       flip = false;
       walkPhase = 0;
       elapsed = 0;
       won = false;
-      setHud({ score: 0, total: coins.length, time: 0, won: false });
+      setHud({ score: 0, total: COIN_COUNT, time: 0, won: false });
     };
     restartRef.current = reset;
-    setHud({ score: 0, total: coins.length, time: 0, won: false });
 
     const onKeyDown = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
@@ -210,49 +194,7 @@ export function Game() {
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    /** one sub-pixel step on a single axis, with corner correction */
-    const step = (dx: number, dy: number) => {
-      if (free(player.x + dx, player.y + dy)) {
-        player.x += dx;
-        player.y += dy;
-        return;
-      }
-      for (let off = 1; off <= CORNER; off++) {
-        if (dx !== 0) {
-          if (free(player.x + dx, player.y - off) && free(player.x, player.y - off)) {
-            player.y -= off;
-            player.x += dx;
-            return;
-          }
-          if (free(player.x + dx, player.y + off) && free(player.x, player.y + off)) {
-            player.y += off;
-            player.x += dx;
-            return;
-          }
-        } else {
-          if (free(player.x - off, player.y + dy) && free(player.x - off, player.y)) {
-            player.x -= off;
-            player.y += dy;
-            return;
-          }
-          if (free(player.x + off, player.y + dy) && free(player.x + off, player.y)) {
-            player.x += off;
-            player.y += dy;
-            return;
-          }
-        }
-      }
-    };
-
-    const move = (dist: number, axis: "x" | "y") => {
-      const sign = Math.sign(dist);
-      let left = Math.abs(dist);
-      while (left > 0) {
-        const s = Math.min(left, 1) * sign;
-        step(axis === "x" ? s : 0, axis === "y" ? s : 0);
-        left -= 1;
-      }
-    };
+    const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
     const update = (dt: number) => {
       let ix = 0;
@@ -264,8 +206,8 @@ export function Game() {
 
       if (!won && (ix || iy)) {
         const len = Math.hypot(ix, iy);
-        move((ix / len) * SPEED * dt, "x");
-        move((iy / len) * SPEED * dt, "y");
+        player.x = clamp(player.x + (ix / len) * SPEED * dt, EDGE, W - EDGE - PW);
+        player.y = clamp(player.y + (iy / len) * SPEED * dt, EDGE, H - EDGE - PH);
         walkPhase += dt * 9;
         if (ix !== 0) {
           facing = "side";
@@ -279,12 +221,11 @@ export function Game() {
 
       if (!won) elapsed += dt;
 
-      // pick up coins
       const cx = player.x + PW / 2;
       const cy = player.y + PH / 2;
       let score = 0;
       for (const coin of coins) {
-        if (!coin.taken && Math.abs(coin.x - cx) < 5 && Math.abs(coin.y - cy) < 5) coin.taken = true;
+        if (!coin.taken && Math.abs(coin.x - cx) < 6 && Math.abs(coin.y - cy) < 6) coin.taken = true;
         if (coin.taken) score++;
       }
       if (score === coins.length) won = true;
@@ -297,37 +238,41 @@ export function Game() {
     };
 
     const draw = (t: number) => {
-      // floor
-      for (let ty = 0; ty < MAP_H; ty++) {
-        for (let tx = 0; tx < MAP_W; tx++) {
-          if (solidAt(tx, ty)) continue;
-          ctx.fillStyle = (tx + ty) % 2 === 0 ? C.floor : C.floorAlt;
-          ctx.fillRect(tx * T, ty * T, T, T);
+      // the field: wide, soft stripes so movement reads without a grid
+      for (let y = 0; y < H; y += 8) {
+        ctx.fillStyle = (y / 8) % 2 === 0 ? C.grass : C.grassAlt;
+        ctx.fillRect(0, y, W, 8);
+      }
+      // a gentle border of taller grass
+      ctx.fillStyle = C.edge;
+      ctx.fillRect(0, 0, W, 3);
+      ctx.fillRect(0, H - 3, W, 3);
+      ctx.fillRect(0, 0, 3, H);
+      ctx.fillRect(W - 3, 0, 3, H);
+
+      for (const d of DECOR) {
+        if (d.kind === "tuft") {
+          ctx.fillStyle = C.tuft;
+          ctx.fillRect(d.x, d.y + 1, 3, 1);
+          ctx.fillRect(d.x + 1, d.y, 1, 1);
+        } else {
+          ctx.fillStyle = d.color;
+          ctx.fillRect(d.x, d.y - 1, 1, 1);
+          ctx.fillRect(d.x - 1, d.y, 3, 1);
+          ctx.fillRect(d.x, d.y + 1, 1, 1);
+          ctx.fillStyle = C.flowerCore;
+          ctx.fillRect(d.x, d.y, 1, 1);
         }
       }
-      // walls
-      for (let ty = 0; ty < MAP_H; ty++) {
-        for (let tx = 0; tx < MAP_W; tx++) {
-          if (!solidAt(tx, ty)) continue;
-          ctx.fillStyle = C.wall;
-          ctx.fillRect(tx * T, ty * T, T, T);
-          if (!solidAt(tx, ty - 1)) {
-            ctx.fillStyle = C.wallTop;
-            ctx.fillRect(tx * T, ty * T, T, 2);
-          }
-          if (!solidAt(tx, ty + 1)) {
-            ctx.fillStyle = C.wallShade;
-            ctx.fillRect(tx * T, ty * T + T - 1, T, 1);
-          }
-        }
-      }
-      // coins
+
       for (let i = 0; i < coins.length; i++) {
         const coin = coins[i]!;
         if (coin.taken) continue;
-        const bob = Math.round(Math.sin(t / 320 + i) * 1);
+        const bob = Math.round(Math.sin(t / 300 + i) * 1);
         const x = Math.round(coin.x) - 2;
         const y = Math.round(coin.y) - 2 + bob;
+        ctx.fillStyle = C.shadow;
+        ctx.fillRect(x, Math.round(coin.y) + 3, 4, 1);
         ctx.fillStyle = C.coinShadow;
         ctx.fillRect(x, y + 1, 4, 3);
         ctx.fillStyle = C.coin;
@@ -335,11 +280,11 @@ export function Game() {
         ctx.fillStyle = C.coinHi;
         ctx.fillRect(x + 1, y, 1, 1);
       }
-      // player
+
       const bob = walkPhase > 0 && Math.floor(walkPhase) % 2 === 0 ? 1 : 0;
       const sx = Math.round(player.x) - 1;
       const sy = Math.round(player.y) - 2 - bob;
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillStyle = C.shadow;
       ctx.fillRect(sx + 2, Math.round(player.y) + PH - 1, 4, 1);
       const rows = facing === "up" ? SPR_UP : facing === "side" ? SPR_SIDE : SPR_DOWN;
       drawSprite(ctx, rows, sx, sy, flip);
@@ -369,7 +314,7 @@ export function Game() {
         <span className="stat">
           <b>{hud.score}</b>/{hud.total} coins
         </span>
-        <span className="title">PIXEL RUN</span>
+        <span className="title">SUNNY FIELD</span>
         <span className="stat">
           {String(Math.floor(hud.time / 60)).padStart(2, "0")}:
           {String(hud.time % 60).padStart(2, "0")}
@@ -393,7 +338,7 @@ export function Game() {
         <kbd>W</kbd>
         <kbd>A</kbd>
         <kbd>S</kbd>
-        <kbd>D</kbd> to move · <kbd>R</kbd> to restart
+        <kbd>D</kbd> to move · <kbd>R</kbd> for a new field
       </footer>
     </div>
   );
