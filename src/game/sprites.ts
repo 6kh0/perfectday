@@ -4,122 +4,109 @@ export type Bitmap = string[];
 export type Palette = Record<string, string>;
 
 
-export const CHAR_DOWN: Bitmap = [
-  "..oooo..",
-  ".ohhhho.",
-  "ohhhhhho",
-  "ohhhhhho",
-  "ohssssho",
-  "osesseso",
-  "okssssko",
-  ".osssso.",
-  ".obbbbo.",
-  "sbbbbbbs",
-  "sbbbbbbs",
-  ".obbbbo.",
-  ".oppppo.",
-  ".op..po.",
-  ".oo..oo.",
-];
-
-export const CHAR_UP: Bitmap = [
-  "..oooo..",
-  ".ohhhho.",
-  "ohhhhhho",
-  "ohhhhhho",
-  "ohhhhhho",
-  "ohhhhhho",
-  "ohhhhhho",
-  ".ohhhho.",
-  ".obbbbo.",
-  "sbbbbbbs",
-  "sbbbbbbs",
-  ".obbbbo.",
-  ".oppppo.",
-  ".op..po.",
-  ".oo..oo.",
-];
-
-export const CHAR_SIDE: Bitmap = [
-  "..oooo..",
-  ".ohhhho.",
-  ".ohhhhho",
-  ".ohhhhho",
-  ".ohhssho",
-  ".ohsesho",
-  ".ohsssho",
-  "..ossso.",
-  "..obbbo.",
-  "..obbbbs",
-  "..obbbbs",
-  "..obbbo.",
-  "..opppo.",
-  "..op.po.",
-  "..oo.oo.",
-];
-
-/** Palette keys: o outline, h hair, s skin, e eye, k blush, b shirt, p pants */
-export function charPalette(hair: string, shirt: string, pants: string, skin = "#ffcf9e"): Palette {
-  return {
-    o: "#4a3524",
-    h: hair,
-    s: skin,
-    e: "#3b2a1c",
-    k: "#ff9fb0",
-    b: shirt,
-    p: pants,
-  };
-}
-
-/* ---------- the player is a cat: 12 wide x 11 tall ---------- */
+/* ---------- the player: a strawberry cat, 15 wide x 21 tall ----------
+   Redrawn from the reference art (44x61) down to world scale; palette taken
+   from it verbatim. */
 
 export const PLAYER_DOWN: Bitmap = [
-  "..o......o..",
-  ".oho....oho.",
-  ".offo..offo.",
-  ".offffffffo.",
-  "offffffffffo",
-  "offeffffeffo",
-  "offffnnffffo",
-  "offffffffffo",
-  ".offffffffo.",
-  ".offffffffo.",
-  ".oo.oo.oo.o.",
+  ".......o.......",
+  ".oo..ogggo..oo.",
+  ".olo.ogdgo.olo.",
+  ".olpoooooooplo.",
+  ".olprrrrrrrplo.",
+  ".orrrrryrrrrro.",
+  ".orrlllllllrro.",
+  ".orrlelllelrro.",
+  ".orrlllllllrro.",
+  ".orrpllpllprro.",
+  ".orrllelellrro.",
+  "..orlllllllro..",
+  "..oorlllllrooo.",
+  "..orrrrrrrroro.",
+  ".orrryrrrrrorro",
+  "orryrrrrrrrorro",
+  "orrrrryrrrrokko",
+  "orryrrrrryroko.",
+  "orrlllrlllrroo.",
+  ".orlllrlllro...",
+  "..ooooooooo....",
 ];
 
 export const PLAYER_UP: Bitmap = [
-  "..o......o..",
-  ".oho....oho.",
-  ".offo..offo.",
-  ".offffffffo.",
-  "offffffffffo",
-  "offffffffffo",
-  "offffffffffo",
-  "offffffffffo",
-  ".offffffffo.",
-  ".offfoffffo.",
-  ".oo.oo.oo.o.",
+  ".......o.......",
+  ".oo..ogggo..oo.",
+  ".olo.ogdgo.olo.",
+  ".ollooooooollo.",
+  ".ollrrrrrrrllo.",
+  ".orrrrryrrrrro.",
+  ".orrrrrrrrrrro.",
+  ".orrrryrrrrrro.",
+  ".orrrrrrrryrro.",
+  ".orryrrrrrrrro.",
+  ".orrrrrryrrrro.",
+  "..orrrrrrrrro..",
+  "..oorrrrrrrooo.",
+  "..orrrrrrrroro.",
+  ".orrryrrrrrorro",
+  "orryrrrrrrrorro",
+  "orrrrryrrrrokko",
+  "orryrrrrryroko.",
+  "orrlllrlllrroo.",
+  ".orlllrlllro...",
+  "..ooooooooo....",
 ];
 
 export const PLAYER_SIDE: Bitmap = [
-  ".......oo...",
-  "......ohho..",
-  "f.....offo..",
-  "ff...offffo.",
-  ".fofffffffo.",
-  ".offfffefffo",
-  ".offfffffnfo",
-  ".offffffffo.",
-  ".offffffffo.",
-  ".oo.oo.oo.o.",
+  ".......o.......",
+  ".oo..ogggo..oo.",
+  ".olo.ogdgo.olo.",
+  ".olpoooooooplo.",
+  ".olprrrrrrrplo.",
+  ".orrrrryrrrrro.",
+  ".orrrlllllllro.",
+  ".orrrlelllllo..",
+  ".orrrllllllplo.",
+  ".orrrlllleello.",
+  ".orrrllllllllo.",
+  "..orrllllllro..",
+  "oooorrllllroo..",
+  "okkrrrrrrrro...",
+  "orkrryrrrrro...",
+  "orryrrrrrrro...",
+  "orrrrryrrrro...",
+  "okryrrrrryro...",
+  "orrlllrlllrro..",
+  ".orlllrlllro...",
+  "..ooooooooo....",
 ];
 
-/** Palette keys: o outline, f fur, e eye, n nose, h inner ear */
-export function playerPalette(fur: string): Palette {
-  return { o: "#4a3524", f: fur, e: "#3b2a1c", n: "#ff9fb0", h: "#ff9fb0" };
+/** Same sprite, different fruit: body/shade/dot colour the hat and coat, fur the face. */
+export function fruitPalette(body: string, shade: string, dot: string, fur: string): Palette {
+  return {
+    o: "#0f0f0f",
+    r: body,
+    k: shade,
+    y: dot,
+    l: fur,
+    p: "#ff9a9a",
+    g: "#4c8241",
+    d: "#345e2a",
+    e: "#000000",
+  };
 }
 
-export const PLAYER_PALETTE = playerPalette("#f0a860");
+/** Palette keys: o outline, r strawberry, k shadow, y seed, l fur, p blush, g leaf, d leaf shadow, e eye */
+export const PLAYER_PALETTE: Palette = {
+  o: "#0f0f0f",
+  r: "#ff3014",
+  k: "#cf2711",
+  y: "#ffd014",
+  l: "#fffde3",
+  p: "#ff9a9a",
+  g: "#4c8241",
+  d: "#345e2a",
+  e: "#000000",
+};
 
 /* ---------- cat: 8 wide x 8 tall ---------- */
 

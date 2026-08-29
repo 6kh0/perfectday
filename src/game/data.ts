@@ -1,4 +1,4 @@
-import { charPalette, catPalette, type Palette } from "./sprites";
+import { catPalette, fruitPalette, type Palette } from "./sprites";
 
 export type SceneId = "town" | "home" | "diner" | "arcade" | "catcafe" | "cinema" | "park";
 
@@ -211,7 +211,7 @@ export type Person = {
   id: string;
   tx: number;
   ty: number;
-  kind: "person" | "cat" | "duck";
+  kind: "citizen" | "cat" | "duck";
   palette: Palette;
   facing: "down" | "up" | "side";
   flip?: boolean;
@@ -310,11 +310,11 @@ export const TOWN: Scene = {
     ] },
   ],
   people: [
-    { id: "gran", tx: 18, ty: 9, kind: "person", palette: charPalette("#cfc6d8", "#7bd06b", "#8a6c4c"), facing: "down", label: "Say hello", lines: [
+    { id: "gran", tx: 18, ty: 9, kind: "citizen", palette: fruitPalette("#8f7de8", "#7263c4", "#c4b9f7", "#cfc6d8"), facing: "down", label: "Say hello", lines: [
       "GRAN: A whole free day, and you're spending it walking past me?",
       "GRAN: Go on. You can't fit it all in — that's the point of a day.",
     ] },
-    { id: "kid", tx: 11, ty: 19, kind: "person", palette: charPalette("#3b2a1c", "#8fd3ff", "#e2705f"), facing: "up", label: "Say hello", lines: [
+    { id: "kid", tx: 11, ty: 19, kind: "citizen", palette: fruitPalette("#4a6fd4", "#3a58ab", "#8fa8ef", "#fffde3"), facing: "up", label: "Say hello", lines: [
       "KID: I found two coins behind the diner. There's more back there.",
       "KID: Nobody ever looks behind the buildings.",
     ] },
@@ -398,9 +398,9 @@ export const DINER: Scene = {
     ] },
   ],
   people: [
-    { id: "maya", tx: 13, ty: 3, kind: "person", palette: charPalette("#3b2a1c", "#ffd166", "#4a6fd4"), facing: "side", label: "Maya", lines: ["MAYA: Sit! Sit sit sit. We've been holding this booth for an hour."] },
-    { id: "theo", tx: 16, ty: 3, kind: "person", palette: charPalette("#a8663b", "#7bd06b", "#3b3350"), facing: "side", flip: true, label: "Theo", lines: ["THEO: I have a story. It's long and it's about a bird. You'll love it."] },
-    { id: "cook", tx: 5, ty: 2, kind: "person", palette: charPalette("#cfc6d8", "#f4f1ff", "#8a6c4c"), facing: "down" },
+    { id: "maya", tx: 13, ty: 3, kind: "citizen", palette: fruitPalette("#ffd166", "#e0ac3f", "#fff3c4", "#fffde3"), facing: "side", label: "Maya", lines: ["MAYA: Sit! Sit sit sit. We've been holding this booth for an hour."] },
+    { id: "theo", tx: 16, ty: 3, kind: "citizen", palette: fruitPalette("#7bd06b", "#5bab4d", "#c4ecb8", "#f0d6b0"), facing: "side", flip: true, label: "Theo", lines: ["THEO: I have a story. It's long and it's about a bird. You'll love it."] },
+    { id: "cook", tx: 5, ty: 2, kind: "citizen", palette: fruitPalette("#ffb38a", "#e0906a", "#ffdcc6", "#fffde3"), facing: "down" },
   ],
   portals: [
     { tx: 11, ty: 13, to: "town", spawn: [14, 8], label: "Sunbeam Street" },
@@ -434,8 +434,8 @@ export const ARCADE: Scene = {
     ] },
   ],
   people: [
-    { id: "attendant", tx: 3, ty: 12, kind: "person", palette: charPalette("#e2705f", "#8f7de8", "#3b3350"), facing: "up" },
-    { id: "player2", tx: 15, ty: 7, kind: "person", palette: charPalette("#3b2a1c", "#ff5d73", "#4a6fd4"), facing: "up", label: "Say hello", lines: ["KID: I'm on level nine. Do not talk to me. Respectfully."] },
+    { id: "attendant", tx: 3, ty: 12, kind: "citizen", palette: fruitPalette("#6b4a8f", "#553a70", "#a98fc9", "#cfc6d8"), facing: "up" },
+    { id: "player2", tx: 15, ty: 7, kind: "citizen", palette: fruitPalette("#ff9f4a", "#e0803a", "#ffd2a3", "#fffde3"), facing: "up", label: "Say hello", lines: ["KID: I'm on level nine. Do not talk to me. Respectfully."] },
   ],
   portals: [
     { tx: 11, ty: 13, to: "town", spawn: [23, 8], label: "Sunbeam Street" },
@@ -467,7 +467,7 @@ export const CATCAFE: Scene = {
     { id: "counter", tx: 4, ty: 4, label: ACTIVITIES.catcafe!.title, activity: "catcafe" },
   ],
   people: [
-    { id: "barista", tx: 4, ty: 2, kind: "person", palette: charPalette("#6b4a8f", "#ff9fb0", "#3b3350"), facing: "down" },
+    { id: "barista", tx: 4, ty: 2, kind: "citizen", palette: fruitPalette("#ff9fb0", "#e0808f", "#ffd4dc", "#ffffff"), facing: "down" },
     { id: "cat1", tx: 18, ty: 4, kind: "cat", palette: catPalette("#a9b4c9"), facing: "down", label: ACTIVITIES.pet!.title },
     { id: "cat2", tx: 10, ty: 7, kind: "cat", palette: catPalette("#4a4453"), facing: "down", label: ACTIVITIES.pet!.title },
     { id: "cat3", tx: 6, ty: 11, kind: "cat", palette: catPalette("#f4f1ff"), facing: "down", label: ACTIVITIES.pet!.title },
@@ -506,7 +506,7 @@ export const CINEMA: Scene = {
     ] },
   ],
   people: [
-    { id: "usher", tx: 5, ty: 11, kind: "person", palette: charPalette("#3b2a1c", "#e2705f", "#3b3350"), facing: "down", label: "Usher", lines: ["USHER: Screen two, and no, I won't tell you the ending."] },
+    { id: "usher", tx: 5, ty: 11, kind: "citizen", palette: fruitPalette("#a3c46b", "#86a552", "#e4f0c4", "#e8d9bf"), facing: "down", label: "Usher", lines: ["USHER: Screen two, and no, I won't tell you the ending."] },
   ],
   portals: [
     { tx: 11, ty: 13, to: "town", spawn: [16, 19], label: "Sunbeam Street" },
@@ -549,7 +549,7 @@ export const PARK: Scene = {
   people: [
     { id: "duck1", tx: 3, ty: 6, kind: "duck", palette: {}, facing: "down" },
     { id: "duck2", tx: 5, ty: 6, kind: "duck", palette: {}, facing: "down", flip: true },
-    { id: "jogger", tx: 12, ty: 11, kind: "person", palette: charPalette("#3b2a1c", "#7bd06b", "#4a6fd4"), facing: "up", label: "Say hello", lines: ["JOGGER: Third loop! ...Okay, second. Okay, first."] },
+    { id: "jogger", tx: 12, ty: 11, kind: "citizen", palette: fruitPalette("#5ab4c4", "#4593a1", "#a5dfe8", "#fffde3"), facing: "up", label: "Say hello", lines: ["JOGGER: Third loop! ...Okay, second. Okay, first."] },
   ],
   portals: [{ tx: 0, ty: 8, to: "town", spawn: [27, 10], label: "Sunbeam Street" }],
   coins: [[20, 2], [4, 13], [21, 13]],
@@ -567,8 +567,6 @@ export const SCENES: Record<SceneId, Scene> = {
 };
 
 export const TOTAL_COINS = Object.values(SCENES).reduce((n, s) => n + s.coins.length, 0);
-
-/* ---------- end-of-day rating ---------- */
 
 export function rateDay(joy: number, places: number) {
   if (joy >= 55 && places >= 4) return { title: "A PERFECT DAY", note: "You couldn't have fit more in. You didn't try to." };

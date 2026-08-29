@@ -23,7 +23,7 @@ bun start    # production
 | --- | --- |
 | `src/game/data.ts` | the whole world: activities, scenes, NPCs, coin positions, the end-of-day rating |
 | `src/game/tiles.ts` | one painter per tile character (grass, wood floor, arcade carpet, beds, seats…) |
-| `src/game/sprites.ts` | bitmaps as arrays of strings — the player cat, townspeople, cats, ducks, shop signs |
+| `src/game/sprites.ts` | bitmaps as arrays of strings — the cat everyone in town is, recoloured per fruit, plus cafe cats, ducks and shop signs |
 | `src/game/engine.ts` | camera, collision, interaction, the day clock, the render loop |
 | `src/Game.tsx` | the React shell: HUD, dialogue box, end-of-day card |
 

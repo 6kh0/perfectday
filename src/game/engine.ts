@@ -12,9 +12,6 @@ import {
 import { SOLID, T, paintTile } from "./tiles";
 import {
   CAT,
-  CHAR_DOWN,
-  CHAR_SIDE,
-  CHAR_UP,
   DUCK,
   DUCK_PALETTE,
   ICONS,
@@ -458,21 +455,24 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   };
 
   const drawPerson = (p: Person, t: number) => {
-    const x = p.tx * T + 4;
+    const bmp =
+      p.kind === "citizen"
+        ? p.facing === "up"
+          ? PLAYER_UP
+          : p.facing === "side"
+            ? PLAYER_SIDE
+            : PLAYER_DOWN
+        : p.kind === "cat"
+          ? CAT
+          : DUCK;
+    const palette = p.kind === "duck" ? DUCK_PALETTE : p.palette;
+    const w = bmp[0]!.length;
+    const x = p.tx * T + Math.round((T - w) / 2);
     const y = p.ty * T + T - 1;
     const bob = Math.round(Math.sin(t / 600 + p.tx)) === 1 ? 1 : 0;
     ctx.fillStyle = "rgba(60,45,30,0.22)";
-    if (p.kind === "person") {
-      ctx.fillRect(x + 1, y - 1, 6, 1);
-      const bmp = p.facing === "up" ? CHAR_UP : p.facing === "side" ? CHAR_SIDE : CHAR_DOWN;
-      drawBitmap(ctx, bmp, p.palette, x, y - bmp.length - bob, p.flip);
-    } else if (p.kind === "cat") {
-      ctx.fillRect(x + 1, y - 1, 6, 1);
-      drawBitmap(ctx, CAT, p.palette, x - 1, y - CAT.length - bob, p.flip);
-    } else {
-      ctx.fillRect(x + 1, y - 1, 6, 1);
-      drawBitmap(ctx, DUCK, DUCK_PALETTE, x, y - DUCK.length - bob, p.flip);
-    }
+    ctx.fillRect(x + 2, y - 1, w - 4, 1);
+    drawBitmap(ctx, bmp, palette, x, y - bmp.length - bob, p.flip);
   };
 
   const drawBubble = (x: number, y: number, t: number) => {
@@ -526,7 +526,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       render: () => {
         const bob = walkPhase > 0 && Math.floor(walkPhase) % 2 === 0 ? 1 : 0;
         ctx.fillStyle = "rgba(60,45,30,0.25)";
-        ctx.fillRect(px - 1, py + PH - 1, 10, 1);
+        ctx.fillRect(px - 2, py + PH - 1, 11, 1);
         const bmp = facing === "up" ? PLAYER_UP : facing === "side" ? PLAYER_SIDE : PLAYER_DOWN;
         const ox = Math.round((PW - bmp[0]!.length) / 2);
         drawBitmap(ctx, bmp, PLAYER_PALETTE, Math.round(px) + ox, Math.round(py + PH - bmp.length - bob), flip);
@@ -534,7 +534,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     });
     actors.sort((a, b) => a.y - b.y).forEach(a => a.render());
 
-    if (prompt && !dialogue) drawBubble(Math.round(px) + 4, Math.round(py) - 8, t);
+    if (prompt && !dialogue) drawBubble(Math.round(px) + 2, Math.round(py + PH - PLAYER_DOWN.length) - 2, t);
 
     ctx.restore();
 
