@@ -5,3 +5,7 @@ team echo (pending a better idea)
 game ideas
 
 - difference scenes
+-stardew valley style game (pixel characters, changing scenes, exploring the map, etc)
+-different routes for the player to explore for a "perfect day"
+-lunch with friends, arcade, cat cafe, chill at home, go out to movies, park
+-collecting coins for more oppotunities around map
