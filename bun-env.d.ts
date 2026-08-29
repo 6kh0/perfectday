@@ -3,6 +3,11 @@ declare module "*.svg" {
   export = path;
 }
 
+declare module "*.png" {
+  const path: `${string}.png`;
+  export = path;
+}
+
 declare module "*.css" {}
 
 declare module "*.module.css" {

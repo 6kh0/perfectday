@@ -37,7 +37,7 @@ export type Snapshot = {
   places: string[];
 };
 
-export type Game = { destroy: () => void; restart: () => void; press: () => void };
+export type Game = { destroy: () => void; restart: () => void; press: () => void; pause: (on: boolean) => void };
 
 export function formatClock(min: number) {
   const t = DAY_START + min;
@@ -156,6 +156,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   let lock = true;
   let prompt: { label: string; act: () => void } | null = null;
   let fade = 0;
+  let paused = false;
 
   const enter = (id: SceneId, spawn: [number, number]) => {
     scene = SCENES[id];
@@ -313,6 +314,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (paused) return;
     const k = e.key.toLowerCase();
     if (["w", "a", "s", "d", " ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
     if (k === "e" || k === "enter") press();
@@ -324,12 +326,16 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     if (k === "r" && ended) reset();
     keys.add(k);
   };
-  const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (paused) return;
+    keys.delete(e.key.toLowerCase());
+  };
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
 
   const update = (dt: number) => {
     fade = Math.max(0, fade - dt * 2.5);
+    if (paused) return;
     if (flipT >= 0) flipT = flipT + dt >= FLIP_TIME ? -1 : flipT + dt;
     const frozen = !!dialogue || ended;
     let ix = 0;
@@ -502,5 +508,9 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     },
     restart: reset,
     press,
+    pause: (on: boolean) => {
+      paused = on;
+      if (on) keys.clear();
+    },
   };
 }
