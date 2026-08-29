@@ -1,4 +1,4 @@
-import { catPalette, fruitPalette, type Palette } from "./sprites";
+import { POTATO_SKIN, catPalette, fruitPalette, type Palette, type Skin } from "./sprites";
 
 export type SceneId = "town" | "home" | "diner" | "arcade" | "catcafe" | "cinema" | "park";
 
@@ -123,7 +123,7 @@ export const ACTIVITIES: Record<string, Activity> = {
 
 /* ---------- scene contents ---------- */
 
-export type Thing = { id: string; tx: number; ty: number; label: string; activity?: string; lines?: string[] };
+export type Thing = { id: string; tx: number; ty: number; label: string; activity?: string; lines?: string[]; skinSwap?: boolean };
 export type Person = {
   id: string;
   tx: number;
@@ -131,6 +131,8 @@ export type Person = {
   kind: "citizen" | "cat" | "duck";
   palette: Palette;
   facing: "down" | "up" | "side";
+  /** citizens normally wear the player art in their own colours; a skin overrides both */
+  skin?: Skin;
   flip?: boolean;
   label?: string;
   lines?: string[];
@@ -231,10 +233,12 @@ rect(townGrid, 20, 2, 7, 5, "H");
 rect(townGrid, 3, 13, 7, 5, "H");
 rect(townGrid, 13, 13, 8, 5, "H");
 rect(townGrid, 2, 10, 4, 3, "~");
-put(townGrid, [[9, 10], [10, 12], [22, 12], [24, 11], [6, 20], [21, 20], [2, 15], [11, 15]], "T");
+put(townGrid, [[9, 10], [10, 12], [24, 14], [24, 11], [6, 20], [21, 20], [2, 15], [11, 15]], "T");
 put(townGrid, [[8, 11], [23, 13], [3, 20], [26, 20], [11, 11]], "B");
 put(townGrid, [[2, 9], [27, 9], [2, 17], [27, 17]], "l");
-put(townGrid, [[16, 10], [17, 10], [11, 16], [12, 16]], "n");
+put(townGrid, [[11, 16], [12, 16]], "n");
+rect(townGrid, 16, 10, 3, 1, "Q");
+rect(townGrid, 16, 11, 3, 1, "P");
 put(
   townGrid,
   [[2, 1], [7, 1], [12, 1], [19, 1], [24, 1], [6, 9], [19, 9], [6, 12], [25, 15], [17, 20], [9, 20], [15, 11], [24, 16]],
@@ -268,6 +272,7 @@ export const TOWN: Scene = {
     bldg(13, 13, 8, 5, "#6fbde8", "#4f9ac4", "#eef6ff", 16, "cinema", "The Roxy"),
   ],
   things: [
+    { id: "stall", tx: 17, ty: 11, label: "Become the potato cat", skinSwap: true },
     look("notice", 15, 8, "Read the notice board", [
       "TODAY ON SUNBEAM STREET",
       "• Diner: lunch special, friends already inside",
@@ -275,17 +280,35 @@ export const TOWN: Scene = {
       "• Cat cafe: nine cats, all of them opinionated",
       "• The Roxy: one showing, and it's the good one",
       "• The park is free. So is the pond. So are the ducks.",
+      "• Spud's stall is open. Ask about the other thing he does.",
       "Coins are scattered all over town. Find them, afford more of the day.",
     ]),
   ],
   people: [
-    citizen("gran", 18, 9, ["#8f7de8", "#7263c4", "#c4b9f7", "#cfc6d8"], "down", {
+    citizen("gran", 10, 9, ["#8f7de8", "#7263c4", "#c4b9f7", "#cfc6d8"], "down", {
       label: "Say hello",
       lines: [
         "GRAN: A whole free day, and you're spending it walking past me?",
         "GRAN: Go on. You can't fit it all in — that's the point of a day.",
       ],
     }),
+    {
+      id: "spud",
+      tx: 20,
+      ty: 11,
+      kind: "citizen",
+      palette: POTATO_SKIN.palette,
+      skin: POTATO_SKIN,
+      facing: "side",
+      flip: true,
+      label: "Spud",
+      lines: [
+        "SPUD: Morning. Potatoes, three for a coin, and I'm not haggling.",
+        "SPUD: ...You're looking at me funny. Yes. I used to be a strawberry.",
+        "SPUD: Stall does both. Spuds, and the other thing. The other thing is free.",
+        "SPUD: Stand at the counter and I'll sort you out. Wears off whenever you like.",
+      ],
+    },
     citizen("kid", 11, 19, ["#4a6fd4", "#3a58ab", "#8fa8ef", "#fffde3"], "up", {
       label: "Say hello",
       lines: [

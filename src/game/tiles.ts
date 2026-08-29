@@ -2,7 +2,7 @@
 
 export const T = 16; // tile size in game pixels
 
-export const SOLID = new Set("TB~flnHmVKC#-tbvASEpX".split(""));
+export const SOLID = new Set("TB~flnHmVKC#-tbvASEpXPQ".split(""));
 
 const hash = (x: number, y: number) => {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
@@ -140,6 +140,53 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
     px(c, "#d3cee0", x, y, 1, T);
     px(c, "#b9b2c9", x + 13, y, 3, T);
     px(c, "#d3cee0", x + 13, y, 1, T);
+  },
+  Q: (c, x, y, r, n) => {
+    // market awning: a pole at each end of the run, striped canvas across the top
+    const left = n(-1, 0) !== "Q";
+    const right = n(1, 0) !== "Q";
+    if (left) px(c, "#8a5a3b", x + 1, y + 9, 2, 7);
+    if (right) px(c, "#8a5a3b", x + 13, y + 9, 2, 7);
+    px(c, "#6f462d", x, y, T, 2);
+    for (let i = 0; i < T; i += 4) px(c, ((x + i) / 4) % 2 === 0 ? "#f4c26b" : "#fff1d6", x + i, y + 2, 4, 7);
+    px(c, "#e0a94f", x, y + 8, T, 1);
+    // scalloped hem
+    for (let i = 0; i < T; i += 8) {
+      px(c, ((x + i) / 4) % 2 === 0 ? "#f4c26b" : "#fff1d6", x + i + 1, y + 9, 6, 1);
+      px(c, "#e0a94f", x + i + 2, y + 10, 4, 1);
+    }
+  },
+  P: (c, x, y, r, n) => {
+    // counter of a potato stall: plank front, sacks and spuds on the top
+    const left = n(-1, 0) !== "P";
+    const right = n(1, 0) !== "P";
+    px(c, "#a8763f", x, y + 5, T, 11);
+    px(c, "#8a5a3b", x + 4, y + 6, 1, 10);
+    px(c, "#8a5a3b", x + 11, y + 6, 1, 10);
+    px(c, "#6f462d", x, y + 14, T, 2);
+    px(c, "#d3ac78", x, y + 3, T, 3);
+    px(c, "#e8cea4", x, y + 3, T, 1);
+    if (left) px(c, "#6f462d", x, y + 3, 1, 13);
+    if (right) px(c, "#6f462d", x + 15, y + 3, 1, 13);
+    // a hessian sack on one tile, loose potatoes on the rest — goods sit on the
+    // counter top, so they are drawn up into the gap under the awning hem
+    if (r < 0.4) {
+      px(c, "#b79a6d", x + 3, y - 4, 9, 7);
+      px(c, "#cbb083", x + 4, y - 3, 6, 4);
+      px(c, "#8f7550", x + 4, y - 4, 7, 1);
+      px(c, "#a98e71", x + 5, y - 6, 3, 2);
+      px(c, "#a98e71", x + 8, y - 5, 3, 2);
+    } else {
+      const spud = (sx: number, sy: number) => {
+        px(c, "#8f7550", sx, sy + 1, 6, 3);
+        px(c, "#a98e71", sx, sy, 6, 3);
+        px(c, "#c4ab8c", sx + 1, sy, 3, 1);
+        px(c, "#6f5333", sx + 4, sy + 1);
+      };
+      spud(x + 2, y - 1);
+      if (r > 0.7) spud(x + 8, y - 4);
+      else px(c, "#6f5333", x + 9, y + 1, 4, 1);
+    }
   },
   H: () => {}, // building footprint, painted by the building renderer
 

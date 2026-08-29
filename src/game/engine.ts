@@ -1,6 +1,6 @@
 import { ACTIVITIES, DAY_END, DAY_START, SCENES, TOTAL_COINS, type Building, type Person, type Scene, type SceneId } from "./data";
 import { SOLID, T, paintTile } from "./tiles";
-import { CAT, DUCK, DUCK_PALETTE, ICONS, PLAYER_DOWN, PLAYER_PALETTE, PLAYER_SIDE, PLAYER_UP, drawBitmap, rotateCCW } from "./sprites";
+import { CAT, DUCK, DUCK_PALETTE, ICONS, PLAYER_DOWN, PLAYER_SIDE, PLAYER_UP, POTATO_SKIN, STRAWBERRY_SKIN, drawBitmap, rotateCCW, type Skin } from "./sprites";
 
 export const MIN_VIEW_W = 20 * T;
 export const MIN_VIEW_H = 12 * T;
@@ -136,6 +136,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   let px = 0;
   let py = 0;
   let facing: keyof typeof FACE = "down";
+  let skin: Skin = STRAWBERRY_SKIN;
   let flip = false;
   let walk = 0;
   let flipT = -1;
@@ -178,6 +179,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     taken = new Set();
     ended = endAfter = false;
     flipT = -1;
+    skin = STRAWBERRY_SKIN;
     enter("town", SCENES.town.spawn);
     talk(["Today is your day off, do stuff", "and have a perfect day."]);
   };
@@ -246,6 +248,24 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     }
   };
 
+  /** Spud's stall: swap the player's whole look, free, as many times as you like. */
+  const swapSkin = () => {
+    const potato = skin !== POTATO_SKIN;
+    skin = potato ? POTATO_SKIN : STRAWBERRY_SKIN;
+    if (!potato) {
+      return talk(["You shake the flour out of your fur and come back a strawberry.", "SPUD: Stall's here all day if you miss it."]);
+    }
+    if (done.has("potato")) return talk(["SPUD: Back in the sack, then.", "Potato again. Still improbably comfortable."]);
+    done.add("potato");
+    joy += 4;
+    memories.push("Spent part of the day as a potato. Nobody asked about it, which was the best part.");
+    talk([
+      "SPUD: Behind the sack, please. Close your eyes. Think starchy thoughts.",
+      "A puff of flour, a smell of clean soil, and you come out potato-shaped.",
+      "It fits better than it has any right to. (+4 joy)",
+    ]);
+  };
+
   const findPrompt = () => {
     const { cx, cy } = centre();
     type Best = { label: string; act: () => void; d: number };
@@ -255,6 +275,10 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       if (d <= 26 && (!best || d < best.d)) best = { label, act, d };
     };
     for (const thing of scene.things) {
+      if (thing.skinSwap) {
+        consider(thing.tx, thing.ty, skin === POTATO_SKIN ? "Go back to being yourself" : thing.label, swapSkin);
+        continue;
+      }
       const label = thing.activity
         ? done.has(thing.activity) && thing.activity !== "sleep"
           ? `${ACTIVITIES[thing.activity]!.title} — done today`
@@ -363,7 +387,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   };
 
   const drawPerson = (p: Person, t: number) => {
-    const bmp = p.kind === "cat" ? CAT : p.kind === "duck" ? DUCK : FACE[p.facing];
+    const bmp = p.kind === "cat" ? CAT : p.kind === "duck" ? DUCK : (p.skin ?? FACE)[p.facing];
     const pal = p.kind === "duck" ? DUCK_PALETTE : p.palette;
     const w = bmp[0]!.length;
     const x = p.tx * T + Math.round((T - w) / 2);
@@ -418,7 +442,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
         const shw = 11 - Math.round(hop * 0.6);
         f(`rgba(60,45,30,${0.25 - hop * 0.012})`, px - 2 + Math.round((11 - shw) / 2), py + PH - 1, shw, 1);
 
-        const bmp = FACE[facing];
+        const bmp = skin[facing];
         const bw = bmp[0]!.length;
         const bx = Math.round(px) + Math.round((PW - bw) / 2);
         const by = Math.round(py + PH - bmp.length - bob - hop);
@@ -426,11 +450,11 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
         const art = flipping ? rotateCCW(bmp, Math.min(4, Math.floor(u * 4.6))) : bmp;
         const ax = bx + Math.round((bw - art[0]!.length) / 2);
         const ay = by + Math.round((bmp.length - art.length) / 2);
-        drawBitmap(ctx, art, PLAYER_PALETTE, ax, ay, flip);
+        drawBitmap(ctx, art, skin.palette, ax, ay, flip);
       },
     });
     actors.sort((a, b) => a.y - b.y).forEach(a => a.render());
-    if (prompt && !dialogue) drawBubble(Math.round(px) + 2, Math.round(py + PH - PLAYER_DOWN.length) - 2, t);
+    if (prompt && !dialogue) drawBubble(Math.round(px) + 2, Math.round(py + PH - skin.down.length) - 2, t);
     ctx.restore();
 
     const tint = scene.outdoor ? dayTint() : scene.dim ?? (clock > 660 ? "rgba(74, 78, 156, 0.18)" : null);

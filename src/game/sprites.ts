@@ -97,6 +97,97 @@ export function fruitPalette(body: string, shade: string, dot: string, fur: stri
 
 export const PLAYER_PALETTE: Palette = fruitPalette("#ff3014", "#cf2711", "#ffd014", "#fffde3");
 
+/* ---------- the potato cat: same body, no sprout, dug-up colours ----------
+   Decoded from the potato sheet; the palette is that file's colours verbatim. */
+
+export const POTATO_DOWN: Bitmap = [
+  "...............",
+  ".oo.........oo.",
+  ".olo.......olo.",
+  ".olpoooooooplo.",
+  ".olpryrrrrrplo.",
+  ".orrrrrrryrrro.",
+  ".orrlllllllrro.",
+  ".orrlelllelryo.",
+  ".orrlllllllrro.",
+  ".orrpllpllprro.",
+  ".oyrllelellrro.",
+  "..orlllllllro..",
+  ".eorrlllllrroo.",
+  ".errrrrrrrrrro.",
+  ".orrrryrryrrrro",
+  "orryrrrrrrryrro",
+  "orrrryrryrrrrre",
+  "oryrrrrrrrrryre",
+  "orrrlllrlllrrre",
+  ".orrlllrlllrre.",
+  "..oooooooooee..",
+];
+
+export const POTATO_UP: Bitmap = [
+  "...............",
+  ".oo.........oo.",
+  ".olo.......olo.",
+  ".ollooooooollo.",
+  ".ollrrrrrrrllo.",
+  ".orrryrrryrrro.",
+  ".oryrrrrrrryro.",
+  ".orrrrryrrrrro.",
+  ".orrryrrrryrro.",
+  ".orrrrrrrrrrro.",
+  ".orryrryrrrrro.",
+  "..orrrrrrryro..",
+  "..oorrrrrrrooo.",
+  "..orryrrryroro.",
+  ".orrrrrrrrrorro",
+  "orrrrrryrrrorro",
+  "orryrrrrryrokko",
+  "orrrrrrrrrroko.",
+  "orrlllrlllrroo.",
+  ".orlllrlllro...",
+  "..ooooooooo....",
+];
+
+export const POTATO_SIDE: Bitmap = [
+  "...............",
+  ".oo.........oo.",
+  ".olo.......olo.",
+  ".olpoooooooplo.",
+  ".olpryrrrryplo.",
+  ".orrrrrryrrrro.",
+  ".oyrrllllllllo.",
+  ".orrrllelllele.",
+  ".okryllllllllo.",
+  ".okrrlplllpllo.",
+  ".okyrllllelelo.",
+  "..okrlllllllo..",
+  "oooorrllllroo..",
+  "okkrrrrrrrro...",
+  "okrryrrryrro...",
+  "orrrrryrrrro...",
+  "oryrrrrrryro...",
+  "orrrrrrrrrro...",
+  "orrlllrlllre...",
+  ".orlllrlllre...",
+  "..ooooooooo....",
+];
+
+export const POTATO_PALETTE: Palette = {
+  o: "#0f0f0f",
+  r: "#a98e71",
+  k: "#705a42",
+  y: "#6f5333",
+  l: "#ffd5a5",
+  p: "#d0a38c",
+  e: "#000000",
+};
+
+/** A whole look for a cat: the three facings plus the colours they use. */
+export type Skin = { down: Bitmap; up: Bitmap; side: Bitmap; palette: Palette };
+
+export const STRAWBERRY_SKIN: Skin = { down: PLAYER_DOWN, up: PLAYER_UP, side: PLAYER_SIDE, palette: PLAYER_PALETTE };
+export const POTATO_SKIN: Skin = { down: POTATO_DOWN, up: POTATO_UP, side: POTATO_SIDE, palette: POTATO_PALETTE };
+
 /* ---------- cat: 8 wide x 8 tall ---------- */
 
 export const CAT: Bitmap = [
