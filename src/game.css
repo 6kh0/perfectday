@@ -1,0 +1,118 @@
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 0%, #23213a 0%, #0d0c16 70%);
+  color: #cfcbe8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  user-select: none;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+.game-hud {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  gap: 24px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.game-hud .title {
+  color: #ffd166;
+  letter-spacing: 0.35em;
+}
+
+.game-hud .stat b {
+  color: #4cc9f0;
+  font-size: 16px;
+}
+
+.screen {
+  position: relative;
+  border: 3px solid #39365e;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #0d0c16, 0 18px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.screen canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  background: rgba(13, 12, 22, 0.82);
+  text-align: center;
+}
+
+.overlay .big {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: #ffd166;
+}
+
+.overlay .sub {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #8b86ad;
+}
+
+.overlay button {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 16px;
+  color: #0d0c16;
+  background: #4cc9f0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.overlay button:hover {
+  background: #7ad9f6;
+}
+
+.game-help {
+  font-size: 12px;
+  color: #6f6a90;
+  letter-spacing: 0.05em;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 2px 5px;
+  margin: 0 1px;
+  font: inherit;
+  font-size: 11px;
+  text-align: center;
+  color: #cfcbe8;
+  background: #23213a;
+  border: 1px solid #39365e;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+}
