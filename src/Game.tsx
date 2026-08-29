@@ -102,7 +102,7 @@ export function Game() {
           <kbd>W</kbd>
           <kbd>A</kbd>
           <kbd>S</kbd>
-          <kbd>D</kbd> walk · <kbd>shift</kbd> run · <kbd>E</kbd> do · <kbd>F</kbd> fullscreen
+          <kbd>D</kbd> walk · <kbd>shift</kbd> run · <kbd>E</kbd> do · <kbd>space</kbd> backflip · <kbd>F</kbd> fullscreen
         </div>
       )}
 

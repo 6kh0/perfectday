@@ -1,6 +1,6 @@
 import { ACTIVITIES, DAY_END, DAY_START, SCENES, TOTAL_COINS, type Building, type Person, type Scene, type SceneId } from "./data";
 import { SOLID, T, paintTile } from "./tiles";
-import { CAT, DUCK, DUCK_PALETTE, ICONS, PLAYER_DOWN, PLAYER_PALETTE, PLAYER_SIDE, PLAYER_UP, drawBitmap } from "./sprites";
+import { CAT, DUCK, DUCK_PALETTE, ICONS, PLAYER_DOWN, PLAYER_PALETTE, PLAYER_SIDE, PLAYER_UP, drawBitmap, rotateCCW } from "./sprites";
 
 export const MIN_VIEW_W = 20 * T;
 export const MIN_VIEW_H = 12 * T;
@@ -12,6 +12,9 @@ const PH = 6;
 const WALK = 62;
 const RUN = 100;
 const FACE = { down: PLAYER_DOWN, up: PLAYER_UP, side: PLAYER_SIDE } as const;
+/** one backflip: four quarter-turns and a hop, in seconds */
+const FLIP_TIME = 0.5;
+const FLIP_HOP = 9;
 
 type Ctx = CanvasRenderingContext2D;
 const fill = (ctx: Ctx, c: string, x: number, y: number, w: number, h: number) => {
@@ -135,6 +138,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   let facing: keyof typeof FACE = "down";
   let flip = false;
   let walk = 0;
+  let flipT = -1;
   let clock = 0;
   let wallet = 0;
   let found = 0;
@@ -173,6 +177,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     done = new Set();
     taken = new Set();
     ended = endAfter = false;
+    flipT = -1;
     enter("town", SCENES.town.spawn);
     talk(["Today is your day off, do stuff", "and have a perfect day."]);
   };
@@ -286,7 +291,12 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   const onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
     if (["w", "a", "s", "d", " ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
-    if (k === "e" || k === " " || k === "enter") press();
+    if (k === "e" || k === "enter") press();
+    // space: advance dialogue if one is open, otherwise show off
+    if (k === " ") {
+      if (dialogue || ended) press();
+      else if (flipT < 0) flipT = 0;
+    }
     if (k === "r" && ended) reset();
     keys.add(k);
   };
@@ -296,6 +306,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
 
   const update = (dt: number) => {
     fade = Math.max(0, fade - dt * 2.5);
+    if (flipT >= 0) flipT = flipT + dt >= FLIP_TIME ? -1 : flipT + dt;
     const frozen = !!dialogue || ended;
     let ix = 0;
     let iy = 0;
@@ -399,11 +410,23 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     actors.push({
       y: py + PH,
       render: () => {
-        const bob = walk > 0 && Math.floor(walk) % 2 === 0 ? 1 : 0;
-        f("rgba(60,45,30,0.25)", px - 2, py + PH - 1, 11, 1);
+        const flipping = flipT >= 0;
+        const u = flipping ? flipT / FLIP_TIME : 0;
+        const hop = flipping ? Math.round(Math.sin(u * Math.PI) * FLIP_HOP) : 0;
+        const bob = !flipping && walk > 0 && Math.floor(walk) % 2 === 0 ? 1 : 0;
+
+        const shw = 11 - Math.round(hop * 0.6);
+        f(`rgba(60,45,30,${0.25 - hop * 0.012})`, px - 2 + Math.round((11 - shw) / 2), py + PH - 1, shw, 1);
+
         const bmp = FACE[facing];
-        const ox = Math.round((PW - bmp[0]!.length) / 2);
-        drawBitmap(ctx, bmp, PLAYER_PALETTE, Math.round(px) + ox, Math.round(py + PH - bmp.length - bob), flip);
+        const bw = bmp[0]!.length;
+        const bx = Math.round(px) + Math.round((PW - bw) / 2);
+        const by = Math.round(py + PH - bmp.length - bob - hop);
+        // quarter-turns keep the pixels square; flipped art spins the other way, which is what we want
+        const art = flipping ? rotateCCW(bmp, Math.min(4, Math.floor(u * 4.6))) : bmp;
+        const ax = bx + Math.round((bw - art[0]!.length) / 2);
+        const ay = by + Math.round((bmp.length - art.length) / 2);
+        drawBitmap(ctx, art, PLAYER_PALETTE, ax, ay, flip);
       },
     });
     actors.sort((a, b) => a.y - b.y).forEach(a => a.render());

@@ -215,6 +215,24 @@ export const ICONS: Record<string, { bmp: Bitmap; pal: Palette }> = {
   },
 };
 
+/* ---------- transforms ---------- */
+
+export function rotateCCW(bmp: Bitmap, times = 1): Bitmap {
+  let out = bmp;
+  for (let n = ((times % 4) + 4) % 4; n > 0; n--) {
+    const h = out.length;
+    const w = out[0]!.length;
+    const next: string[] = [];
+    for (let c = w - 1; c >= 0; c--) {
+      let row = "";
+      for (let r = 0; r < h; r++) row += out[r]![c];
+      next.push(row);
+    }
+    out = next;
+  }
+  return out;
+}
+
 /* ---------- drawing ---------- */
 
 export function drawBitmap(ctx: CanvasRenderingContext2D, bmp: Bitmap, pal: Palette, px: number, py: number, flip = false) {
