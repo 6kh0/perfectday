@@ -4,3 +4,4 @@ team echo (pending a better idea)
 
 game ideas
 
+- difference scenes
