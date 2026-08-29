@@ -253,16 +253,15 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     const potato = skin !== POTATO_SKIN;
     skin = potato ? POTATO_SKIN : STRAWBERRY_SKIN;
     if (!potato) {
-      return talk(["You shake the flour out of your fur and come back a strawberry.", "SPUD: Stall's here all day if you miss it."]);
+      return talk(["You shake the flour out of your fur and come back a strawberry."]);
     }
     if (done.has("potato")) return talk(["SPUD: Back in the sack, then.", "Potato again. Still improbably comfortable."]);
     done.add("potato");
     joy += 4;
     memories.push("Spent part of the day as a potato. Nobody asked about it, which was the best part.");
     talk([
-      "SPUD: Behind the sack, please. Close your eyes. Think starchy thoughts.",
-      "A puff of flour, a smell of clean soil, and you come out potato-shaped.",
-      "It fits better than it has any right to. (+4 joy)",
+      "A puff of flour, a smell of dirt, and you come out potato-shaped.",
+      "(+4 potato joy)",
     ]);
   };
 
