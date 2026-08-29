@@ -91,6 +91,11 @@ body {
   background: #fff;
 }
 
+.hud .icon.muted {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
 .coin-dot {
   width: 10px;
   height: 10px;

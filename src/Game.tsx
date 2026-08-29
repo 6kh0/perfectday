@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MAX_VIEW_H, MAX_VIEW_W, MIN_VIEW_H, MIN_VIEW_W, createGame, formatClock, type Game as Engine, type Snapshot } from "./game/engine";
 import { rateDay } from "./game/data";
+import { music } from "./game/music";
 import "./game.css";
 
 const EMPTY: Snapshot = {
+  sceneId: "",
   sceneName: "",
   clock: 0,
   wallet: 0,
@@ -33,6 +35,7 @@ export function Game() {
   const engine = useRef<Engine | null>(null);
   const [view, setView] = useState(fitView);
   const [s, setS] = useState<Snapshot>(EMPTY);
+  const [muted, setMuted] = useState(music.muted);
 
   useEffect(() => {
     const fit = () => setView(fitView());
@@ -44,18 +47,33 @@ export function Game() {
   useEffect(() => {
     const g = createGame(canvasRef.current!, setS);
     engine.current = g;
-    return () => g.destroy();
+    music.attach();
+    return () => {
+      g.destroy();
+      music.detach();
+    };
   }, []);
+
+  useEffect(() => {
+    if (s.sceneId) music.play(s.ended ? "ending" : s.sceneId);
+    music.duck(!!s.dialogue && !s.ended);
+  }, [s.sceneId, s.ended, s.dialogue]);
 
   const toggleFs = useCallback(() => {
     document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
   }, []);
 
+  const toggleMute = useCallback(() => setMuted(music.toggleMute()), []);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key.toLowerCase() === "f" && toggleFs();
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === "f") toggleFs();
+      if (k === "m") toggleMute();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggleFs]);
+  }, [toggleFs, toggleMute]);
 
   const rating = rateDay(s.joy, s.places.length);
 
@@ -77,10 +95,18 @@ export function Game() {
           <em>
             {s.found}/{s.totalCoins}
           </em>
-          <span className="joy">♥ {s.joy}</span>
+          <span className="joy">joy: {s.joy}</span>
         </span>
+        <button
+          className={`pill icon${muted ? " muted" : ""}`}
+          onClick={toggleMute}
+          title={muted ? "Unmute (M)" : "Mute (M)"}
+          aria-pressed={muted}
+        >
+          music
+        </button>
         <button className="pill icon" onClick={toggleFs} title="Fullscreen (F)">
-          ⛶
+          fullscreen
         </button>
       </div>
 
@@ -102,7 +128,7 @@ export function Game() {
           <kbd>W</kbd>
           <kbd>A</kbd>
           <kbd>S</kbd>
-          <kbd>D</kbd> walk · <kbd>shift</kbd> run · <kbd>E</kbd> do · <kbd>space</kbd> backflip · <kbd>F</kbd> fullscreen
+          <kbd>D</kbd> walk · <kbd>shift</kbd> run · <kbd>E</kbd> do · <kbd>space</kbd> backflip · <kbd>M</kbd> mute · <kbd>F</kbd> fullscreen
         </div>
       )}
 

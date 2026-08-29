@@ -23,6 +23,7 @@ const fill = (ctx: Ctx, c: string, x: number, y: number, w: number, h: number) =
 };
 
 export type Snapshot = {
+  sceneId: SceneId | "";
   sceneName: string;
   clock: number;
   wallet: number;
@@ -470,6 +471,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
     update(dt);
     draw(now);
     const snap: Snapshot = {
+      sceneId: scene.id,
       sceneName: scene.name,
       clock,
       wallet,
