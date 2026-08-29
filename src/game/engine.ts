@@ -1,37 +1,23 @@
-import {
-  ACTIVITIES,
-  DAY_END,
-  DAY_START,
-  SCENES,
-  TOTAL_COINS,
-  type Building,
-  type Person,
-  type Scene,
-  type SceneId,
-} from "./data";
+import { ACTIVITIES, DAY_END, DAY_START, SCENES, TOTAL_COINS, type Building, type Person, type Scene, type SceneId } from "./data";
 import { SOLID, T, paintTile } from "./tiles";
-import {
-  CAT,
-  DUCK,
-  DUCK_PALETTE,
-  ICONS,
-  PLAYER_DOWN,
-  PLAYER_PALETTE,
-  PLAYER_SIDE,
-  PLAYER_UP,
-  drawBitmap,
-} from "./sprites";
+import { CAT, DUCK, DUCK_PALETTE, ICONS, PLAYER_DOWN, PLAYER_PALETTE, PLAYER_SIDE, PLAYER_UP, drawBitmap } from "./sprites";
 
-/** the camera shows whatever the canvas is sized to; these are the floor values */
-export const MIN_VIEW_W = 20 * T; // 320
-export const MIN_VIEW_H = 12 * T; // 192
+export const MIN_VIEW_W = 20 * T;
+export const MIN_VIEW_H = 12 * T;
 export const MAX_VIEW_W = 40 * T;
 export const MAX_VIEW_H = 24 * T;
 
-const PW = 8; // player hitbox (feet)
+const PW = 8;
 const PH = 6;
-const WALK = 62; // px per second
+const WALK = 62;
 const RUN = 100;
+const FACE = { down: PLAYER_DOWN, up: PLAYER_UP, side: PLAYER_SIDE } as const;
+
+type Ctx = CanvasRenderingContext2D;
+const fill = (ctx: Ctx, c: string, x: number, y: number, w: number, h: number) => {
+  ctx.fillStyle = c;
+  ctx.fillRect(x, y, w, h);
+};
 
 export type Snapshot = {
   sceneName: string;
@@ -47,98 +33,66 @@ export type Snapshot = {
   places: string[];
 };
 
-export type Game = {
-  destroy: () => void;
-  restart: () => void;
-  press: () => void; // the same thing the E key does
-};
+export type Game = { destroy: () => void; restart: () => void; press: () => void };
 
-export function formatClock(minutes: number) {
-  const total = DAY_START + minutes;
-  const h24 = Math.floor(total / 60);
-  const m = total % 60;
-  const h = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h}:${String(m).padStart(2, "0")} ${h24 < 12 ? "AM" : "PM"}`;
+export function formatClock(min: number) {
+  const t = DAY_START + min;
+  const h24 = Math.floor(t / 60);
+  return `${h24 % 12 || 12}:${String(t % 60).padStart(2, "0")} ${h24 < 12 ? "AM" : "PM"}`;
 }
 
-export function formatSpan(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+export function formatSpan(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
   return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
 }
 
-/* ---------- static scene layer, painted once ---------- */
+/* ---------- static scene layer ---------- */
 
 const layerCache = new Map<SceneId, HTMLCanvasElement>();
 
-function drawBuilding(ctx: CanvasRenderingContext2D, b: Building) {
+function drawBuilding(ctx: Ctx, b: Building) {
   const bx = b.x * T;
   const by = b.y * T;
   const bw = b.w * T;
   const wallTop = by + (b.h - 2) * T;
   const bottom = by + b.h * T;
 
-  // ground shadow
-  ctx.fillStyle = "rgba(60, 45, 30, 0.18)";
-  ctx.fillRect(bx, bottom, bw, 3);
-
-  // wall
-  ctx.fillStyle = b.wall;
-  ctx.fillRect(bx, wallTop, bw, bottom - wallTop);
-  ctx.fillStyle = "rgba(120, 95, 70, 0.18)";
-  ctx.fillRect(bx, bottom - 4, bw, 4);
-
-  // roof with a 3px overhang
-  ctx.fillStyle = b.roof;
-  ctx.fillRect(bx - 3, by, bw + 6, wallTop - by);
+  fill(ctx, "rgba(60, 45, 30, 0.18)", bx, bottom, bw, 3);
+  fill(ctx, b.wall, bx, wallTop, bw, bottom - wallTop);
+  fill(ctx, "rgba(120, 95, 70, 0.18)", bx, bottom - 4, bw, 4);
+  fill(ctx, b.roof, bx - 3, by, bw + 6, wallTop - by);
   ctx.fillStyle = b.roofDark;
   for (let y = by + 4; y < wallTop; y += 4) ctx.fillRect(bx - 3, y, bw + 6, 1);
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillRect(bx - 3, by, bw + 6, 2);
-  ctx.fillStyle = b.roofDark;
-  ctx.fillRect(bx - 3, wallTop - 3, bw + 6, 3);
+  fill(ctx, "rgba(255,255,255,0.35)", bx - 3, by, bw + 6, 2);
+  fill(ctx, b.roofDark, bx - 3, wallTop - 3, bw + 6, 3);
 
-  // windows on the wall row, skipping the door
   for (let i = 0; i < b.w; i++) {
     const tx = b.x + i;
-    if (tx === b.doorX || tx === b.doorX - 1 || tx === b.doorX + 1) continue;
-    if (i % 2 === 0) continue;
+    if (tx === b.doorX || tx === b.doorX - 1 || tx === b.doorX + 1 || i % 2 === 0) continue;
     const wx = tx * T + 4;
     const wy = wallTop + 6;
-    ctx.fillStyle = "#8a6c4c";
-    ctx.fillRect(wx - 1, wy - 1, 10, 12);
-    ctx.fillStyle = "#bfe6ff";
-    ctx.fillRect(wx, wy, 8, 10);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(wx, wy, 3, 4);
-    ctx.fillStyle = "#8a6c4c";
-    ctx.fillRect(wx + 3, wy, 1, 10);
-    ctx.fillRect(wx, wy + 4, 8, 1);
+    fill(ctx, "#8a6c4c", wx - 1, wy - 1, 10, 12);
+    fill(ctx, "#bfe6ff", wx, wy, 8, 10);
+    fill(ctx, "#ffffff", wx, wy, 3, 4);
+    fill(ctx, "#8a6c4c", wx + 3, wy, 1, 10);
+    fill(ctx, "#8a6c4c", wx, wy + 4, 8, 1);
   }
 
-  // door
   const dx = b.doorX * T;
   const dTop = wallTop + 6;
-  ctx.fillStyle = "#6f462d";
-  ctx.fillRect(dx + 1, dTop, 14, bottom - dTop);
-  ctx.fillStyle = "#c08a52";
-  ctx.fillRect(dx + 2, dTop + 1, 12, bottom - dTop - 1);
-  ctx.fillStyle = "#a8763f";
-  ctx.fillRect(dx + 4, dTop + 3, 8, bottom - dTop - 4);
-  ctx.fillStyle = "#ffd166";
-  ctx.fillRect(dx + 11, dTop + 8, 2, 2);
+  fill(ctx, "#6f462d", dx + 1, dTop, 14, bottom - dTop);
+  fill(ctx, "#c08a52", dx + 2, dTop + 1, 12, bottom - dTop - 1);
+  fill(ctx, "#a8763f", dx + 4, dTop + 3, 8, bottom - dTop - 4);
+  fill(ctx, "#ffd166", dx + 11, dTop + 8, 2, 2);
 
-  // hanging sign with the shop icon
   const icon = ICONS[b.icon];
-  if (icon) {
-    const sx = dx + 4;
-    const sy = wallTop - 12;
-    ctx.fillStyle = "#6f462d";
-    ctx.fillRect(sx - 2, sy - 2, 12, 12);
-    ctx.fillStyle = "#fff6d6";
-    ctx.fillRect(sx - 1, sy - 1, 10, 10);
-    drawBitmap(ctx, icon.bmp, icon.pal, sx, sy);
-  }
+  if (!icon) return;
+  const sx = dx + 4;
+  const sy = wallTop - 12;
+  fill(ctx, "#6f462d", sx - 2, sy - 2, 12, 12);
+  fill(ctx, "#fff6d6", sx - 1, sy - 1, 10, 10);
+  drawBitmap(ctx, icon.bmp, icon.pal, sx, sy);
 }
 
 function sceneLayer(scene: Scene) {
@@ -154,12 +108,11 @@ function sceneLayer(scene: Scene) {
   const at = (x: number, y: number) => scene.tiles[y]?.[x] ?? "#";
   for (let ty = 0; ty < h; ty++) {
     for (let tx = 0; tx < w; tx++) {
-      // furniture and trees are painted over the floor they stand on, so nothing
-      // shows the backdrop through the gaps in a sprite
-      const ch = at(tx, ty) === "H" ? scene.floor : at(tx, ty);
-      const neighbor = (dx: number, dy: number) => at(tx + dx, ty + dy);
-      if (ch !== scene.floor && ch !== "#" && ch !== "X") paintTile(ctx, scene.floor, tx, ty, neighbor);
-      paintTile(ctx, ch, tx, ty, neighbor);
+      const raw = at(tx, ty);
+      const ch = raw === "H" ? scene.floor : raw;
+      const n = (dx: number, dy: number) => at(tx + dx, ty + dy);
+      if (ch !== scene.floor && ch !== "#" && ch !== "X") paintTile(ctx, scene.floor, tx, ty, n);
+      paintTile(ctx, ch, tx, ty, n);
     }
   }
   for (const b of scene.buildings) drawBuilding(ctx, b);
@@ -172,15 +125,17 @@ function sceneLayer(scene: Scene) {
 export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => void): Game {
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = false;
+  const f = (c: string, x: number, y: number, w: number, h: number) => fill(ctx, c, x, y, w, h);
 
   const keys = new Set<string>();
+  const held = (...ks: string[]) => ks.some(k => keys.has(k));
   let scene!: Scene;
   let px = 0;
   let py = 0;
-  let facing: "down" | "up" | "side" = "down";
+  let facing: keyof typeof FACE = "down";
   let flip = false;
-  let walkPhase = 0;
-  let clock = 0; // minutes since 9:00
+  let walk = 0;
+  let clock = 0;
   let wallet = 0;
   let found = 0;
   let joy = 0;
@@ -189,44 +144,38 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   let done = new Set<string>();
   let taken = new Set<string>();
   let dialogue: string[] | null = null;
-  let dialogueIndex = 0;
-  let endAfterDialogue = false;
+  let line = 0;
+  let endAfter = false;
   let ended = false;
-  let portalLock = true;
+  let lock = true;
   let prompt: { label: string; act: () => void } | null = null;
-  let fade = 0; // 1 = black, fades to 0 after a scene change
+  let fade = 0;
 
   const enter = (id: SceneId, spawn: [number, number]) => {
     scene = SCENES[id];
     px = spawn[0] * T + (T - PW) / 2;
     py = spawn[1] * T + T - PH - 1;
-    portalLock = true;
+    lock = true;
     fade = 1;
     sceneLayer(scene);
     if (!places.includes(scene.name) && id !== "town") places.push(scene.name);
   };
 
+  const talk = (lines: string[]) => {
+    dialogue = lines;
+    line = 0;
+  };
+
   const reset = () => {
-    clock = 0;
-    wallet = 0;
-    found = 0;
-    joy = 0;
+    clock = wallet = found = joy = 0;
     memories = [];
     places = [];
     done = new Set();
     taken = new Set();
-    dialogue = null;
-    ended = false;
-    endAfterDialogue = false;
+    ended = endAfter = false;
     enter("town", SCENES.town.spawn);
-    dialogue = [
-      "Today is your day off, do stuff",
-      "and have a perfect day.",
-    ];
-    dialogueIndex = 0;
+    talk(["Today is your day off, do stuff", "and have a perfect day."]);
   };
-
-  /* ---------- collision ---------- */
 
   const solidAt = (tx: number, ty: number) => {
     const ch = scene.tiles[ty]?.[tx];
@@ -249,23 +198,18 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       const s = Math.min(left, 1) * sign;
       const nx = axis === "x" ? px + s : px;
       const ny = axis === "y" ? py + s : py;
-      if (free(nx, ny)) {
-        px = nx;
-        py = ny;
-      } else break;
+      if (!free(nx, ny)) break;
+      px = nx;
+      py = ny;
       left -= 1;
     }
   };
-
-  /* ---------- interaction ---------- */
 
   const centre = () => ({ cx: px + PW / 2, cy: py + PH / 2 });
 
   const activityHint = (id: string) => {
     const a = ACTIVITIES[id]!;
-    const bits: string[] = [];
-    if (a.cost) bits.push(`${a.cost} coin${a.cost > 1 ? "s" : ""}`);
-    if (a.minutes) bits.push(formatSpan(a.minutes));
+    const bits = [a.cost && `${a.cost} coin${a.cost > 1 ? "s" : ""}`, a.minutes && formatSpan(a.minutes)].filter(Boolean);
     return bits.length ? `${a.title} — ${bits.join(", ")}` : a.title;
   };
 
@@ -277,44 +221,33 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       return;
     }
     const key = id === "pet" ? `pet:${thingId}` : id;
-    if (done.has(key)) {
-      dialogue = ["You already did that today — and it was good. Try something else."];
-      dialogueIndex = 0;
-      return;
-    }
-    if (a.requires && !done.has(a.requires)) {
-      dialogue = [`BARISTA: Grab a table first — ${ACTIVITIES[a.requires]!.title.toLowerCase()}.`];
-      dialogueIndex = 0;
-      return;
-    }
+    if (done.has(key)) return talk(["You already did that today — and it was good. Try something else."]);
+    if (a.requires && !done.has(a.requires)) return talk([`BARISTA: Grab a table first — ${ACTIVITIES[a.requires]!.title.toLowerCase()}.`]);
     if (a.cost > wallet) {
-      dialogue = [
+      return talk([
         `That costs ${a.cost} coins and you have ${wallet}.`,
         "There are coins all over town — behind the buildings, out in the park.",
-      ];
-      dialogueIndex = 0;
-      return;
+      ]);
     }
     wallet -= a.cost;
     clock = Math.min(clock + a.minutes, DAY_END - DAY_START);
     joy += a.joy;
     done.add(key);
     if (a.memory && !memories.includes(a.memory)) memories.push(a.memory);
-    dialogue = [...a.lines];
-    dialogueIndex = 0;
+    talk([...a.lines]);
     if (clock >= DAY_END - DAY_START) {
-      dialogue.push("The light goes orange, then blue. That's the day.");
-      endAfterDialogue = true;
+      dialogue!.push("The light goes orange, then blue. That's the day.");
+      endAfter = true;
     }
   };
 
   const findPrompt = () => {
     const { cx, cy } = centre();
-    let best: { label: string; act: () => void; d: number } | null = null;
+    type Best = { label: string; act: () => void; d: number };
+    let best: Best | null = null;
     const consider = (tx: number, ty: number, label: string, act: () => void) => {
       const d = Math.hypot(tx * T + T / 2 - cx, ty * T + T / 2 - cy);
-      if (d > 26) return;
-      if (!best || d < best.d) best = { label, act, d };
+      if (d <= 26 && (!best || d < best.d)) best = { label, act, d };
     };
     for (const thing of scene.things) {
       const label = thing.activity
@@ -322,54 +255,33 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
           ? `${ACTIVITIES[thing.activity]!.title} — done today`
           : activityHint(thing.activity)
         : thing.label;
-      consider(thing.tx, thing.ty, label, () => {
-        if (thing.activity) runActivity(thing.activity, thing.id);
-        else {
-          dialogue = [...(thing.lines ?? [])];
-          dialogueIndex = 0;
-        }
-      });
+      consider(thing.tx, thing.ty, label, () => (thing.activity ? runActivity(thing.activity, thing.id) : talk([...(thing.lines ?? [])])));
     }
     for (const p of scene.people) {
       if (!p.label) continue;
-      const isPet = p.kind === "cat";
-      const label = isPet
-        ? done.has(`pet:${p.id}`)
-          ? "This one has had quite enough attention"
-          : "Pet the cat"
-        : p.label;
-      consider(p.tx, p.ty, label, () => {
-        if (isPet) runActivity("pet", p.id);
-        else {
-          dialogue = [...(p.lines ?? [])];
-          dialogueIndex = 0;
-        }
-      });
+      const pet = p.kind === "cat";
+      const label = pet ? (done.has(`pet:${p.id}`) ? "This one has had quite enough attention" : "Pet the cat") : p.label;
+      consider(p.tx, p.ty, label, () => (pet ? runActivity("pet", p.id) : talk([...(p.lines ?? [])])));
     }
-    for (const portal of scene.portals) {
-      consider(portal.tx, portal.ty, `Enter ${portal.label}`, () => enter(portal.to, portal.spawn));
-    }
-    prompt = best ? { label: (best as any).label, act: (best as any).act } : null;
+    for (const p of scene.portals) consider(p.tx, p.ty, `Enter ${p.label}`, () => enter(p.to, p.spawn));
+    prompt = best;
   };
 
   const press = () => {
     if (ended) return;
     if (dialogue) {
-      dialogueIndex++;
-      if (dialogueIndex >= dialogue.length) {
+      if (++line >= dialogue.length) {
         dialogue = null;
-        dialogueIndex = 0;
-        if (endAfterDialogue) {
+        line = 0;
+        if (endAfter) {
           ended = true;
-          endAfterDialogue = false;
+          endAfter = false;
         }
       }
       return;
     }
     prompt?.act();
   };
-
-  /* ---------- input ---------- */
 
   const onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
@@ -382,34 +294,29 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
 
-  /* ---------- update ---------- */
-
   const update = (dt: number) => {
     fade = Math.max(0, fade - dt * 2.5);
     const frozen = !!dialogue || ended;
-
     let ix = 0;
     let iy = 0;
     if (!frozen) {
-      if (keys.has("a") || keys.has("arrowleft")) ix -= 1;
-      if (keys.has("d") || keys.has("arrowright")) ix += 1;
-      if (keys.has("w") || keys.has("arrowup")) iy -= 1;
-      if (keys.has("s") || keys.has("arrowdown")) iy += 1;
+      if (held("a", "arrowleft")) ix--;
+      if (held("d", "arrowright")) ix++;
+      if (held("w", "arrowup")) iy--;
+      if (held("s", "arrowdown")) iy++;
     }
-
     if (ix || iy) {
       const len = Math.hypot(ix, iy);
-      const speed = keys.has("shift") ? RUN : WALK;
+      const speed = held("shift") ? RUN : WALK;
       moveAxis((ix / len) * speed * dt, "x");
       moveAxis((iy / len) * speed * dt, "y");
-      walkPhase += dt * (speed / 8);
-      if (ix !== 0) {
+      walk += dt * (speed / 8);
+      if (ix) {
         facing = "side";
         flip = ix < 0;
       } else facing = iy < 0 ? "up" : "down";
-    } else walkPhase = 0;
+    } else walk = 0;
 
-    // coins
     const { cx, cy } = centre();
     scene.coins.forEach(([tx, ty], i) => {
       const key = `${scene.id}:${i}`;
@@ -421,17 +328,11 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       }
     });
 
-    // portals fire by walking onto the mat
-    const onTile = scene.portals.find(
-      p => Math.floor(cx / T) === p.tx && Math.floor(py / T) === p.ty,
-    );
-    if (!onTile) portalLock = false;
-    else if (!portalLock && !frozen) enter(onTile.to, onTile.spawn);
-
+    const onTile = scene.portals.find(p => Math.floor(cx / T) === p.tx && Math.floor(py / T) === p.ty);
+    if (!onTile) lock = false;
+    else if (!lock && !frozen) enter(onTile.to, onTile.spawn);
     findPrompt();
   };
-
-  /* ---------- draw ---------- */
 
   const dayTint = () => {
     const hour = (DAY_START + clock) / 60;
@@ -444,112 +345,75 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
 
   const drawCoin = (x: number, y: number, t: number, i: number) => {
     const bob = Math.round(Math.sin(t / 300 + i * 1.7));
-    ctx.fillStyle = "rgba(60,45,30,0.2)";
-    ctx.fillRect(x - 2, y + 4, 5, 1);
-    ctx.fillStyle = "#e8a52c";
-    ctx.fillRect(x - 3, y - 3 + bob, 6, 6);
-    ctx.fillStyle = "#ffd93d";
-    ctx.fillRect(x - 3, y - 3 + bob, 6, 5);
-    ctx.fillStyle = "#fff8c9";
-    ctx.fillRect(x - 2, y - 2 + bob, 2, 2);
+    f("rgba(60,45,30,0.2)", x - 2, y + 4, 5, 1);
+    f("#e8a52c", x - 3, y - 3 + bob, 6, 6);
+    f("#ffd93d", x - 3, y - 3 + bob, 6, 5);
+    f("#fff8c9", x - 2, y - 2 + bob, 2, 2);
   };
 
   const drawPerson = (p: Person, t: number) => {
-    const bmp =
-      p.kind === "citizen"
-        ? p.facing === "up"
-          ? PLAYER_UP
-          : p.facing === "side"
-            ? PLAYER_SIDE
-            : PLAYER_DOWN
-        : p.kind === "cat"
-          ? CAT
-          : DUCK;
-    const palette = p.kind === "duck" ? DUCK_PALETTE : p.palette;
+    const bmp = p.kind === "cat" ? CAT : p.kind === "duck" ? DUCK : FACE[p.facing];
+    const pal = p.kind === "duck" ? DUCK_PALETTE : p.palette;
     const w = bmp[0]!.length;
     const x = p.tx * T + Math.round((T - w) / 2);
     const y = p.ty * T + T - 1;
     const bob = Math.round(Math.sin(t / 600 + p.tx)) === 1 ? 1 : 0;
-    ctx.fillStyle = "rgba(60,45,30,0.22)";
-    ctx.fillRect(x + 2, y - 1, w - 4, 1);
-    drawBitmap(ctx, bmp, palette, x, y - bmp.length - bob, p.flip);
+    f("rgba(60,45,30,0.22)", x + 2, y - 1, w - 4, 1);
+    drawBitmap(ctx, bmp, pal, x, y - bmp.length - bob, p.flip);
   };
 
   const drawBubble = (x: number, y: number, t: number) => {
     const bob = Math.round(Math.sin(t / 200)) === 1 ? 1 : 0;
     const bx = x - 4;
     const by = y - 14 - bob;
-    ctx.fillStyle = "#4a3524";
-    ctx.fillRect(bx, by, 9, 11);
-    ctx.fillStyle = "#fff6d6";
-    ctx.fillRect(bx + 1, by + 1, 7, 9);
-    ctx.fillStyle = "#4a3524";
-    ctx.fillRect(bx + 3, by + 10, 3, 2);
-    ctx.fillStyle = "#4a3524";
-    ctx.fillRect(bx + 3, by + 3, 3, 1);
-    ctx.fillRect(bx + 3, by + 5, 2, 1);
-    ctx.fillRect(bx + 3, by + 7, 3, 1);
-    ctx.fillRect(bx + 3, by + 3, 1, 5);
+    f("#4a3524", bx, by, 9, 11);
+    f("#fff6d6", bx + 1, by + 1, 7, 9);
+    f("#4a3524", bx + 3, by + 10, 3, 2);
+    f("#4a3524", bx + 3, by + 3, 3, 1);
+    f("#4a3524", bx + 3, by + 5, 2, 1);
+    f("#4a3524", bx + 3, by + 7, 3, 1);
+    f("#4a3524", bx + 3, by + 3, 1, 5);
   };
 
   const draw = (t: number) => {
-    // resizing a canvas resets its context, so the pixel settings live here
     ctx.imageSmoothingEnabled = false;
     const vw = canvas.width;
     const vh = canvas.height;
     const layer = sceneLayer(scene);
-    const sceneW = layer.width;
-    const sceneH = layer.height;
+    const { width: sw, height: sh } = layer;
     let camX = Math.round(px + PW / 2 - vw / 2);
     let camY = Math.round(py + PH / 2 - vh / 2);
-    camX = sceneW <= vw ? Math.round((sceneW - vw) / 2) : Math.max(0, Math.min(camX, sceneW - vw));
-    camY = sceneH <= vh ? Math.round((sceneH - vh) / 2) : Math.max(0, Math.min(camY, sceneH - vh));
+    camX = sw <= vw ? Math.round((sw - vw) / 2) : Math.max(0, Math.min(camX, sw - vw));
+    camY = sh <= vh ? Math.round((sh - vh) / 2) : Math.max(0, Math.min(camY, sh - vh));
 
-    ctx.fillStyle = scene.outdoor ? "#7ec850" : "#241f33";
-    ctx.fillRect(0, 0, vw, vh);
+    f(scene.outdoor ? "#7ec850" : "#241f33", 0, 0, vw, vh);
     ctx.save();
     ctx.translate(-camX, -camY);
     ctx.drawImage(layer, 0, 0);
 
     scene.coins.forEach(([tx, ty], i) => {
-      if (taken.has(`${scene.id}:${i}`)) return;
-      drawCoin(tx * T + T / 2, ty * T + T / 2, t, i);
+      if (!taken.has(`${scene.id}:${i}`)) drawCoin(tx * T + T / 2, ty * T + T / 2, t, i);
     });
 
-    // people and player, sorted so whoever is lower is drawn in front
-    const actors: { y: number; render: () => void }[] = scene.people.map(p => ({
-      y: p.ty * T + T,
-      render: () => drawPerson(p, t),
-    }));
+    const actors: { y: number; render: () => void }[] = scene.people.map(p => ({ y: p.ty * T + T, render: () => drawPerson(p, t) }));
     actors.push({
       y: py + PH,
       render: () => {
-        const bob = walkPhase > 0 && Math.floor(walkPhase) % 2 === 0 ? 1 : 0;
-        ctx.fillStyle = "rgba(60,45,30,0.25)";
-        ctx.fillRect(px - 2, py + PH - 1, 11, 1);
-        const bmp = facing === "up" ? PLAYER_UP : facing === "side" ? PLAYER_SIDE : PLAYER_DOWN;
+        const bob = walk > 0 && Math.floor(walk) % 2 === 0 ? 1 : 0;
+        f("rgba(60,45,30,0.25)", px - 2, py + PH - 1, 11, 1);
+        const bmp = FACE[facing];
         const ox = Math.round((PW - bmp[0]!.length) / 2);
         drawBitmap(ctx, bmp, PLAYER_PALETTE, Math.round(px) + ox, Math.round(py + PH - bmp.length - bob), flip);
       },
     });
     actors.sort((a, b) => a.y - b.y).forEach(a => a.render());
-
     if (prompt && !dialogue) drawBubble(Math.round(px) + 2, Math.round(py + PH - PLAYER_DOWN.length) - 2, t);
-
     ctx.restore();
 
     const tint = scene.outdoor ? dayTint() : scene.dim ?? (clock > 660 ? "rgba(74, 78, 156, 0.18)" : null);
-    if (tint) {
-      ctx.fillStyle = tint;
-      ctx.fillRect(0, 0, vw, vh);
-    }
-    if (fade > 0) {
-      ctx.fillStyle = `rgba(20, 16, 30, ${fade})`;
-      ctx.fillRect(0, 0, vw, vh);
-    }
+    if (tint) f(tint, 0, 0, vw, vh);
+    if (fade > 0) f(`rgba(20, 16, 30, ${fade})`, 0, 0, vw, vh);
   };
-
-  /* ---------- loop ---------- */
 
   let last = performance.now();
   let raf = 0;
@@ -567,7 +431,7 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
       totalCoins: TOTAL_COINS,
       joy,
       prompt: prompt?.label ?? null,
-      dialogue: dialogue ? dialogue.slice(dialogueIndex, dialogueIndex + 1) : null,
+      dialogue: dialogue ? dialogue.slice(line, line + 1) : null,
       ended,
       memories,
       places,
@@ -582,7 +446,6 @@ export function createGame(canvas: HTMLCanvasElement, publish: (s: Snapshot) => 
 
   reset();
   raf = requestAnimationFrame(frame);
-
   return {
     destroy: () => {
       cancelAnimationFrame(raf);

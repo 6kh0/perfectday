@@ -1,5 +1,12 @@
 :root {
   color-scheme: dark;
+  --bg: #241f33;
+  --paper: #fff6d6;
+  --ink: #4a3524;
+  --wood: #8a5a3b;
+  --mute: #a08a6a;
+  --gold: #ffd166;
+  --sky: #8fd3ff;
 }
 
 html,
@@ -7,20 +14,18 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #241f33;
-  color: #fff6d6;
+  background: var(--bg);
+  color: var(--paper);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   user-select: none;
 }
-
-/* ---------- the stage fills the window ---------- */
 
 .game {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
-  background: #241f33;
+  background: var(--bg);
 }
 
 .game > canvas {
@@ -28,20 +33,22 @@ body {
   image-rendering: pixelated;
 }
 
-/* ---------- floating hud ---------- */
+.pill,
+.prompt {
+  font-size: 13px;
+  color: var(--ink);
+  border: 2px solid var(--wood);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 rgba(74, 53, 36, 0.45);
+}
 
 .pill {
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 6px 12px;
-  font-size: 13px;
   line-height: 1;
-  color: #4a3524;
   background: rgba(255, 246, 214, 0.94);
-  border: 2px solid #8a5a3b;
-  border-radius: 999px;
-  box-shadow: 0 3px 0 rgba(74, 53, 36, 0.45);
 }
 
 .hud {
@@ -71,7 +78,7 @@ body {
 .hud .stats em {
   font-style: normal;
   font-size: 11px;
-  color: #a08a6a;
+  color: var(--mute);
 }
 
 .hud .icon {
@@ -97,8 +104,6 @@ body {
   font-weight: 700;
 }
 
-/* ---------- dialogue, prompt, help ---------- */
-
 .dialogue {
   position: absolute;
   left: 50%;
@@ -107,9 +112,9 @@ body {
   width: min(760px, calc(100vw - 48px));
   box-sizing: border-box;
   padding: 16px 18px;
-  color: #4a3524;
-  background: #fff6d6;
-  border: 3px solid #8a5a3b;
+  color: var(--ink);
+  background: var(--paper);
+  border: 3px solid var(--wood);
   border-radius: 8px;
   box-shadow: 0 6px 0 rgba(20, 14, 30, 0.5);
   cursor: pointer;
@@ -126,7 +131,7 @@ body {
   right: 12px;
   bottom: 6px;
   font-size: 11px;
-  color: #a08a6a;
+  color: var(--mute);
   animation: blink 1s steps(2) infinite;
 }
 
@@ -143,12 +148,7 @@ body {
   transform: translateX(-50%);
   white-space: nowrap;
   padding: 7px 14px;
-  font-size: 13px;
-  color: #4a3524;
   background: rgba(255, 246, 214, 0.96);
-  border: 2px solid #8a5a3b;
-  border-radius: 999px;
-  box-shadow: 0 3px 0 rgba(74, 53, 36, 0.45);
 }
 
 .help {
@@ -169,7 +169,7 @@ kbd {
   font: inherit;
   font-size: 10px;
   text-align: center;
-  color: #4a3524;
+  color: var(--ink);
   background: rgba(255, 246, 214, 0.9);
   border: 1px solid #c9ad86;
   border-bottom-width: 2px;
@@ -179,8 +179,6 @@ kbd {
 .prompt kbd {
   font-size: 11px;
 }
-
-/* ---------- end of day ---------- */
 
 .ending {
   position: absolute;
@@ -201,7 +199,7 @@ kbd {
   padding: 28px 32px;
   text-align: center;
   background: rgba(36, 31, 51, 0.96);
-  border: 3px solid #8a5a3b;
+  border: 3px solid var(--wood);
   border-radius: 10px;
   box-shadow: 0 8px 0 rgba(10, 8, 16, 0.6);
 }
@@ -210,7 +208,7 @@ kbd {
   margin: 0;
   font-size: 11px;
   letter-spacing: 0.2em;
-  color: #8fd3ff;
+  color: var(--sky);
   text-transform: uppercase;
 }
 
@@ -218,7 +216,7 @@ kbd {
   margin: 0;
   font-size: 26px;
   letter-spacing: 0.14em;
-  color: #ffd166;
+  color: var(--gold);
 }
 
 .ending-note {
@@ -251,15 +249,15 @@ kbd {
 .ending-score {
   margin: 12px 0 6px;
   font-size: 12px;
-  color: #8fd3ff;
+  color: var(--sky);
 }
 
 .ending button {
   font: inherit;
   font-size: 13px;
   padding: 9px 20px;
-  color: #4a3524;
-  background: #ffd166;
+  color: var(--ink);
+  background: var(--gold);
   border: none;
   border-radius: 999px;
   box-shadow: 0 3px 0 #c98b2a;

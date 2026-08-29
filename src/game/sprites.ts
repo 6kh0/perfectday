@@ -95,18 +95,7 @@ export function fruitPalette(body: string, shade: string, dot: string, fur: stri
   };
 }
 
-/** Palette keys: o outline, r strawberry, k shadow, y seed, l fur, p blush, g leaf, d leaf shadow, e eye */
-export const PLAYER_PALETTE: Palette = {
-  o: "#0f0f0f",
-  r: "#ff3014",
-  k: "#cf2711",
-  y: "#ffd014",
-  l: "#fffde3",
-  p: "#ff9a9a",
-  g: "#4c8241",
-  d: "#345e2a",
-  e: "#000000",
-};
+export const PLAYER_PALETTE: Palette = fruitPalette("#ff3014", "#cf2711", "#ffd014", "#fffde3");
 
 /* ---------- cat: 8 wide x 8 tall ---------- */
 
@@ -228,21 +217,13 @@ export const ICONS: Record<string, { bmp: Bitmap; pal: Palette }> = {
 
 /* ---------- drawing ---------- */
 
-export function drawBitmap(
-  ctx: CanvasRenderingContext2D,
-  bmp: Bitmap,
-  pal: Palette,
-  px: number,
-  py: number,
-  flip = false,
-) {
-  for (let r = 0; r < bmp.length; r++) {
-    const row = bmp[r]!;
+export function drawBitmap(ctx: CanvasRenderingContext2D, bmp: Bitmap, pal: Palette, px: number, py: number, flip = false) {
+  bmp.forEach((row, r) => {
     for (let c = 0; c < row.length; c++) {
       const color = pal[row[c]!];
       if (!color) continue;
       ctx.fillStyle = color;
       ctx.fillRect(px + (flip ? row.length - 1 - c : c), py + r, 1, 1);
     }
-  }
+  });
 }

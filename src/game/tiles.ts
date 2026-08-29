@@ -2,11 +2,7 @@
 
 export const T = 16; // tile size in game pixels
 
-/** chars the player cannot walk through */
 export const SOLID = new Set("TB~flnHmVKC#-tbvASEpX".split(""));
-
-/** floors, so a scene can say what its furniture stands on */
-export const FLOORS = new Set("wscjko.,=".split(""));
 
 const hash = (x: number, y: number) => {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
@@ -20,6 +16,19 @@ type Neighbor = (dx: number, dy: number) => string;
 const px = (ctx: Ctx, color: string, x: number, y: number, w = 1, h = 1) => {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, w, h);
+};
+
+const edge = (c: Ctx, n: Neighbor, ch: string, x: number, y: number, col: string) => {
+  if (n(0, -1) !== ch) px(c, col, x, y, T, 1);
+  if (n(0, 1) !== ch) px(c, col, x, y + 15, T, 1);
+  if (n(-1, 0) !== ch) px(c, col, x, y, 1, T);
+  if (n(1, 0) !== ch) px(c, col, x + 15, y, 1, T);
+};
+
+const check = (c: Ctx, x: number, y: number, tx: number, ty: number, a: string, b: string) => {
+  px(c, a, x, y, T, T);
+  px(c, b, x + ((tx + ty) % 2) * 8, y, 8, 8);
+  px(c, b, x + (((tx + ty) % 2) ^ 1) * 8, y + 8, 8, 8);
 };
 
 /* ---------- shared bits ---------- */
@@ -73,10 +82,7 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
       const sy = y + Math.floor(hash(x * 3, y + i) * T);
       px(c, hash(sx, sy) < 0.5 ? "#d5b57f" : "#eed6ab", sx, sy);
     }
-    if (n(0, -1) !== "=") px(c, "#d5b57f", x, y, T, 1);
-    if (n(0, 1) !== "=") px(c, "#d5b57f", x, y + 15, T, 1);
-    if (n(-1, 0) !== "=") px(c, "#d5b57f", x, y, 1, T);
-    if (n(1, 0) !== "=") px(c, "#d5b57f", x + 15, y, 1, T);
+    edge(c, n, "=", x, y, "#d5b57f");
   },
   T: (c, x, y, r) => {
     grass(c, x, y, r);
@@ -158,18 +164,11 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
       }
   },
   c: (c, x, y, r, n, tx, ty) => {
-    px(c, "#f0a3c2", x, y, T, T);
-    px(c, "#f7b9d2", x + ((tx + ty) % 2) * 8, y, 8, 8);
-    px(c, "#f7b9d2", x + (((tx + ty) % 2) ^ 1) * 8, y + 8, 8, 8);
-    if (n(0, -1) !== "c") px(c, "#d97fa5", x, y, T, 1);
-    if (n(0, 1) !== "c") px(c, "#d97fa5", x, y + 15, T, 1);
-    if (n(-1, 0) !== "c") px(c, "#d97fa5", x, y, 1, T);
-    if (n(1, 0) !== "c") px(c, "#d97fa5", x + 15, y, 1, T);
+    check(c, x, y, tx, ty, "#f0a3c2", "#f7b9d2");
+    edge(c, n, "c", x, y, "#d97fa5");
   },
   k: (c, x, y, r, n, tx, ty) => {
-    px(c, "#2b2450", x, y, T, T);
-    px(c, "#332b5e", x + ((tx + ty) % 2) * 8, y, 8, 8);
-    px(c, "#332b5e", x + (((tx + ty) % 2) ^ 1) * 8, y + 8, 8, 8);
+    check(c, x, y, tx, ty, "#2b2450", "#332b5e");
     const neon = ["#d94f63", "#6fb3d9", "#d9b04f", "#63ad5c", "#a37fd1"];
     for (let i = 0; i < 2; i++) {
       const sx = x + Math.floor(hash(tx * 9 + i, ty) * (T - 2));
@@ -323,19 +322,10 @@ const painters: Record<string, (c: Ctx, x: number, y: number, r: number, n: Neig
   },
 };
 
-export function paintTile(
-  ctx: Ctx,
-  ch: string,
-  tx: number,
-  ty: number,
-  neighbor: Neighbor,
-) {
-  const painter = painters[ch];
+export function paintTile(ctx: Ctx, ch: string, tx: number, ty: number, neighbor: Neighbor) {
   const x = tx * T;
   const y = ty * T;
-  if (!painter) {
-    px(ctx, "#ff00ff", x, y, T, T);
-    return;
-  }
+  const painter = painters[ch];
+  if (!painter) return px(ctx, "#ff00ff", x, y, T, T);
   painter(ctx, x, y, hash(tx, ty), neighbor, tx, ty);
 }

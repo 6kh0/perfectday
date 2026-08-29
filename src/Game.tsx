@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  MAX_VIEW_H,
-  MAX_VIEW_W,
-  MIN_VIEW_H,
-  MIN_VIEW_W,
-  createGame,
-  formatClock,
-  type Game as Engine,
-  type Snapshot,
-} from "./game/engine";
+import { MAX_VIEW_H, MAX_VIEW_W, MIN_VIEW_H, MIN_VIEW_W, createGame, formatClock, type Game as Engine, type Snapshot } from "./game/engine";
 import { rateDay } from "./game/data";
 import "./game.css";
 
@@ -26,7 +17,6 @@ const EMPTY: Snapshot = {
   places: [],
 };
 
-/** the canvas fills the window at a whole-number pixel scale */
 function fitView() {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -40,7 +30,7 @@ function fitView() {
 
 export function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<Engine | null>(null);
+  const engine = useRef<Engine | null>(null);
   const [view, setView] = useState(fitView);
   const [s, setS] = useState<Snapshot>(EMPTY);
 
@@ -52,23 +42,20 @@ export function Game() {
   }, []);
 
   useEffect(() => {
-    const engine = createGame(canvasRef.current!, setS);
-    engineRef.current = engine;
-    return () => engine.destroy();
+    const g = createGame(canvasRef.current!, setS);
+    engine.current = g;
+    return () => g.destroy();
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen?.();
+  const toggleFs = useCallback(() => {
+    document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
   }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "f") toggleFullscreen();
-    };
+    const onKey = (e: KeyboardEvent) => e.key.toLowerCase() === "f" && toggleFs();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggleFullscreen]);
+  }, [toggleFs]);
 
   const rating = rateDay(s.joy, s.places.length);
 
@@ -92,13 +79,13 @@ export function Game() {
           </em>
           <span className="joy">♥ {s.joy}</span>
         </span>
-        <button className="pill icon" onClick={toggleFullscreen} title="Fullscreen (F)">
+        <button className="pill icon" onClick={toggleFs} title="Fullscreen (F)">
           ⛶
         </button>
       </div>
 
       {s.dialogue && !s.ended && (
-        <div className="dialogue" onClick={() => engineRef.current?.press()}>
+        <div className="dialogue" onClick={() => engine.current?.press()}>
           <p>{s.dialogue[0]}</p>
           <span className="more">E ▸</span>
         </div>
@@ -126,21 +113,15 @@ export function Game() {
             <h2>{rating.title}</h2>
             <p className="ending-note">{rating.note}</p>
             <ul>
-              {s.memories.length ? (
-                s.memories.map(m => <li key={m}>{m}</li>)
-              ) : (
-                <li className="dim">You didn't really do anything today.</li>
-              )}
+              {s.memories.length ? s.memories.map(m => <li key={m}>{m}</li>) : <li className="dim">You didn't really do anything today.</li>}
             </ul>
             <p className="ending-score">
               ♥ {s.joy} joy · {s.places.length} places · {s.found}/{s.totalCoins} coins found
             </p>
-            <button onClick={() => engineRef.current?.restart()}>live the day again (R)</button>
+            <button onClick={() => engine.current?.restart()}>live the day again (R)</button>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-export default Game;
