@@ -3,7 +3,6 @@
 export type Bitmap = string[];
 export type Palette = Record<string, string>;
 
-/* ---------- characters: 8 wide x 15 tall ---------- */
 
 export const CHAR_DOWN: Bitmap = [
   "..oooo..",
